@@ -30,6 +30,7 @@ import appSettingRouter from './modules/appSetting';
 import maintainRouter from './modules/maintain';
 import mobileRouter from './modules/mobile';
 import designRouter from './modules/design';
+import jkBusinessRouter from './modules/jkBusiness';
 
 /**
  * Note: sub-menu only appear when route children.length >= 1
@@ -84,6 +85,8 @@ export const constantRoutes = [
   mobileRouter,
   //装修
   designRouter,
+  //九州康业务第一阶段
+  jkBusinessRouter,
   {
     path: '/404',
     component: () => import('@/views/error-page/404'),
@@ -170,3 +173,4 @@ export function resetRouter() {
 }
 
 export default router;
+

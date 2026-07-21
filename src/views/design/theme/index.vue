@@ -43,6 +43,7 @@ export default {
         { tit: '生鲜绿', class: 'bg3' },
         { tit: '海鲜蓝', class: 'bg4' },
         { tit: '女神粉', class: 'bg5' },
+        { tit: '九州康绿', class: 'bg6' },
       ],
       themeData: [],
       imgList: [require('@/assets/theme/theme1.jpg')],
@@ -51,8 +52,9 @@ export default {
       theme3: [require('@/assets/theme/theme3.jpg')],
       theme4: [require('@/assets/theme/theme4.png')],
       theme5: [require('@/assets/theme/theme5.jpg')],
+      theme6: [require('@/assets/theme/theme3.jpg')],
       //主题色
-      themeColor: ['#e93323', '#FE5C2D', '#42CA4D', '#1db0fc', '#ff448f'],
+      themeColor: ['#e93323', '#FE5C2D', '#42CA4D', '#1db0fc', '#ff448f', '#19bf9b'],
     };
   },
   mounted() {
@@ -71,6 +73,8 @@ export default {
         this.$set(this, 'imgList', this.theme4);
       } else if (index == 4) {
         this.$set(this, 'imgList', this.theme5);
+      } else if (index == 5) {
+        this.$set(this, 'imgList', this.theme6);
       }
     },
     //获取默认数据
@@ -88,6 +92,7 @@ export default {
         3: this.theme3,
         4: this.theme4,
         5: this.theme5,
+        6: this.theme6,
       };
       return statusMap[status];
     },
@@ -194,6 +199,10 @@ export default {
 
 .bg5 {
   background: #ff448f;
+}
+
+.bg6 {
+  background: #19bf9b;
 }
 
 .white {
