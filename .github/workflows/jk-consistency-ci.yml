@@ -1,12 +1,14 @@
 name: Jiuzhoukang admin CI
 
 on:
-  push:
-    branches:
-      - fix/jk-business-consistency
   pull_request:
     branches:
       - master
+  workflow_dispatch:
+
+concurrency:
+  group: jk-admin-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
