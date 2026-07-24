@@ -4,6 +4,7 @@
       <el-select v-model="status" clearable placeholder="结算状态" class="filter-item" style="width:150px"><el-option label="待结算" value="PENDING_SETTLE" /><el-option label="已结算" value="SETTLED" /><el-option label="可提现" value="AVAILABLE" /></el-select>
       <el-button type="primary" @click="loadRecords">查询待结算佣金</el-button>
       <el-button type="success" :disabled="!selected.length" @click="settle">结算选中记录</el-button>
+      <el-button type="warning" :loading="autoLoading" @click="autoSettle">立即结算全部到期佣金</el-button>
     </div>
     <el-alert title="仅可同时结算同一用户、同一身份的待结算佣金；通过勾选列表选择，不允许手填记录 ID。" type="info" :closable="false" style="margin-bottom:16px" />
     <el-table v-loading="loading" :data="records" border @selection-change="selected=$event">
@@ -21,7 +22,7 @@
   </div>
 </template>
 <script>
-import { getJkCommissionRecordList, getJkCommissionSettleTaskList, settleJkCommissionRecords } from '@/api/jkBusiness'
-export default { data() { return { status: 'PENDING_SETTLE', records: [], tasks: [], selected: [], loading: false } }, created() { this.loadRecords(); this.loadTasks() }, methods: { loadRecords() { this.loading = true; getJkCommissionRecordList({ status: this.status }).then(r => { this.records = r.data || r || [] }).finally(() => { this.loading = false }) }, loadTasks() { getJkCommissionSettleTaskList().then(r => { this.tasks = r.data || r || [] }) }, settle() { const ids = this.selected.map(x => x.id); this.$prompt('请输入本次结算请求号（不可重复）', '确认结算', { inputPattern: /\S+/, inputErrorMessage: '请求号不能为空' }).then(({ value }) => settleJkCommissionRecords({ commissionRecordIds: ids, requestNo: value }).then(() => { this.$message.success('结算任务已提交'); this.loadRecords(); this.loadTasks() })) } }}
+import { getJkCommissionRecordList, getJkCommissionSettleTaskList, settleJkCommissionRecords, triggerJkAutoSettle } from '@/api/jkBusiness'
+export default { data() { return { status: 'PENDING_SETTLE', records: [], tasks: [], selected: [], loading: false, autoLoading: false } }, created() { this.loadRecords(); this.loadTasks() }, methods: { loadRecords() { this.loading = true; getJkCommissionRecordList({ status: this.status }).then(r => { this.records = r.data || r || [] }).finally(() => { this.loading = false }) }, loadTasks() { getJkCommissionSettleTaskList().then(r => { this.tasks = r.data || r || [] }) }, settle() { const ids = this.selected.map(x => x.id); this.$prompt('请输入本次结算请求号（不可重复）', '确认结算', { inputPattern: /\S+/, inputErrorMessage: '请求号不能为空' }).then(({ value }) => settleJkCommissionRecords({ commissionRecordIds: ids, requestNo: value }).then(() => { this.$message.success('结算任务已提交'); this.loadRecords(); this.loadTasks() })) }, autoSettle() { this.$confirm('将立即扫描并结算所有已结束冻结期的待结算佣金，未到期记录不会处理。确认继续？', '自动结算', { type: 'warning' }).then(() => { this.autoLoading = true; return triggerJkAutoSettle({ limit: 500, triggerNo: 'ADMIN-' + Date.now() }) }).then(r => { const count = r && r.data !== undefined ? r.data : r; this.$message.success('自动结算完成，处理记录数：' + (count || 0)); this.loadRecords(); this.loadTasks() }).finally(() => { this.autoLoading = false }) } }}
 </script>
 <style scoped>.sub-text{font-size:12px;color:#909399}</style>

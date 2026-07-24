@@ -23,8 +23,8 @@
           </el-select>
         </el-form-item>
         <el-form-item label="区域">
-          <el-select v-model="query.regionCode" clearable filterable placeholder="全部区域" style="width: 220px">
-            <el-option v-for="item in regionOptions" :key="item.regionCode" :label="item.regionName" :value="item.regionCode" />
+          <el-select v-model="query.regionCode" clearable filterable remote :remote-method="searchRegions" :loading="regionLoading" placeholder="名称/编码搜索" style="width: 220px">
+            <el-option v-for="item in regionOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
@@ -106,9 +106,15 @@
           </el-select>
         </el-form-item>
         <el-form-item label="区域选择">
-          <el-select v-model="form.regionCode" clearable filterable placeholder="请选择区域" style="width: 100%">
-            <el-option v-for="item in regionOptions" :key="item.regionCode" :label="item.regionName" :value="item.regionCode" />
-          </el-select>
+          <el-cascader
+            v-model="form.regionPath"
+            clearable
+            filterable
+            :props="regionCascaderProps"
+            placeholder="逐级选择区域"
+            style="width: 100%"
+            @change="handleRegionPathChange"
+          />
         </el-form-item>
         <el-form-item label="指定用户">
           <el-select v-model="form.userId" clearable filterable remote reserve-keyword placeholder="请选择用户" :remote-method="searchUsers" :loading="userLoading" style="width: 100%">
@@ -135,7 +141,7 @@
 </template>
 
 <script>
-import { getJkBusinessRoleList, getJkPriceRuleList, getJkPriceRuleRegionOptions, saveJkPriceRule, updateJkPriceRuleStatus } from '@/api/jkBusiness';
+import { getJkBusinessRoleList, getJkPriceRuleList, getJkPriceRuleRegionOptions, getJkRegionPath, saveJkPriceRule, updateJkPriceRuleStatus } from '@/api/jkBusiness';
 import { productDetailApi, productLstApi } from '@/api/store';
 import { userListApi } from '@/api/user';
 export default {
@@ -147,6 +153,8 @@ export default {
       form: { priceType: 'FIXED', ruleVersion: 1 },
       roleOptions: [],
       regionOptions: [],
+      regionLoading: false,
+      regionCascaderProps: { lazy: true, emitPath: true, lazyLoad: this.loadRegionNode },
       productOptions: [],
       skuOptions: [],
       userOptions: [],
@@ -167,10 +175,25 @@ export default {
         this.roleOptions = (payload && payload.list) || [];
       });
     },
-    loadRegions() {
-      getJkPriceRuleRegionOptions().then((res) => {
+    loadRegions(keyword) {
+      this.regionLoading = true;
+      getJkPriceRuleRegionOptions({ keyword, enabled: true }).then((res) => {
         this.regionOptions = (res && res.data) || res || [];
+      }).finally(() => {
+        this.regionLoading = false;
       });
+    },
+    searchRegions(keyword) {
+      this.loadRegions(keyword);
+    },
+    loadRegionNode(node, resolve) {
+      getJkPriceRuleRegionOptions({ parentRegionCode: node.level === 0 ? undefined : node.value, enabled: true }).then((res) => {
+        const rows = (res && res.data) || res || [];
+        resolve(rows.map(item => ({ label: item.label, value: item.value, leaf: item.leaf, disabled: item.disabled })));
+      }).catch(() => resolve([]));
+    },
+    handleRegionPathChange(value) {
+      this.form.regionCode = value && value.length ? value[value.length - 1] : '';
     },
     loadData() {
       getJkPriceRuleList(this.query).then((res) => {
@@ -191,6 +214,12 @@ export default {
       }
       if (row && row.userId) {
         this.ensureUserOption(row.userId, row.applicantName, row.applicantPhone, row.userNickname);
+      }
+      if (row && row.regionCode) {
+        getJkRegionPath(row.regionCode).then((res) => {
+          const path = (res && res.data) || res || {};
+          this.$set(this.form, 'regionPath', path.fullPathCodes || []);
+        });
       }
       this.dialogVisible = true;
     },
