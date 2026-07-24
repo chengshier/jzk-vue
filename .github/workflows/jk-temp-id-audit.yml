@@ -1,0 +1,22 @@
+name: JK temporary ID audit
+
+on:
+  push:
+    branches:
+      - fix/jk-business-consistency
+    paths:
+      - .github/workflows/jk-temp-id-audit.yml
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Find manual ID controls
+        run: |
+          grep -RInE 'placeholder="[^"]*ID|v-model="(query|form)\.[A-Za-z0-9_]*Id"|label="[^"]*ID"' src/views/jkBusiness src/api > jk-id-audit.txt || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jk-id-audit
+          path: jk-id-audit.txt
+          retention-days: 1
