@@ -1,5 +1,13 @@
 import request from '@/utils/request'
 
+export function getJkUserOptions(params) {
+  return request({ url: '/admin/jk/options/users', method: 'get', params })
+}
+
+export function getJkRegionOptions(params) {
+  return request({ url: '/admin/jk/options/regions', method: 'get', params })
+}
+
 export function getJkStockAccountOptions(params) {
   return request({ url: '/admin/jk/options/stock-accounts', method: 'get', params })
 }
