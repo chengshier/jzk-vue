@@ -11,6 +11,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  id-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Find manual ID controls
+        run: |
+          grep -RInE 'placeholder="[^"]*ID|v-model="(query|form)\.[A-Za-z0-9_]*Id"|label="[^"]*ID"' src/views/jkBusiness src/api > jk-id-audit.txt || true
+      - name: Upload ID audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: jk-id-audit
+          path: jk-id-audit.txt
+          retention-days: 1
+
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
