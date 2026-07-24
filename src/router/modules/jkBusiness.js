@@ -24,6 +24,7 @@ const jkBusinessRouter = {
     { path: 'platformOrder', component: () => import('@/views/jkBusiness/platformOrder/index'), name: 'jkPlatformOrder', meta: { title: '平台订货管理', section: 'trade' } },
     { path: 'stockTransfer', component: () => import('@/views/jkBusiness/stockTransfer/index'), name: 'jkStockTransfer', meta: { title: '库存调拨管理', section: 'trade' } },
     { path: 'stockTransferReturn', component: () => import('@/views/jkBusiness/stockTransferReturn/index'), name: 'jkStockTransferReturn', meta: { title: '调拨退回管理', section: 'trade' } },
+    { path: 'receiveException', component: () => import('@/views/jkBusiness/receiveException/index'), name: 'jkReceiveException', meta: { title: '异常收货处理', section: 'trade' } },
 
     // 库存：库存主体只定义货物归属，不用于重复录入平台库存
     { path: 'stockAccount', component: () => import('@/views/jkBusiness/stockAccount/index'), name: 'jkStockAccount', meta: { title: '库存主体', section: 'stock' } },
