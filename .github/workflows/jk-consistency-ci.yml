@@ -1,0 +1,27 @@
+name: Jiuzhoukang admin CI
+
+on:
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: jk-admin-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16'
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+      - name: Build production bundle
+        run: npm run build:prod
