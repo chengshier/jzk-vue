@@ -1,0 +1,27 @@
+<template>
+  <div class="divBox">
+    <el-card shadow="never">
+      <div slot="header" class="head"><span>库存盘点</span><el-button type="primary" size="small" @click="openCreate">新建盘点</el-button></div>
+      <el-alert :closable="false" type="warning" show-icon title="提交实盘后该库存账户进入逻辑冻结；审核通过只生成盘盈/盘亏库存流水，不允许直接改库存表。" />
+      <el-form inline size="small" style="margin-top:14px"><el-form-item label="库存账户"><el-input-number v-model="query.stockAccountId" :min="1" /></el-form-item><el-form-item label="状态"><el-select v-model="query.status" clearable><el-option v-for="x in statuses" :key="x" :label="x" :value="x" /></el-select></el-form-item><el-button @click="load">查询</el-button></el-form>
+      <el-table v-loading="loading" :data="list" size="mini" border>
+        <el-table-column prop="checkNo" label="盘点单号" min-width="180"/><el-table-column prop="stockAccountId" label="库存账户" width="100"/><el-table-column prop="ownerUserId" label="归属用户" width="100"/><el-table-column prop="bookTotalQty" label="账面" width="80"/><el-table-column prop="actualTotalQty" label="实盘" width="80"/><el-table-column prop="profitQty" label="盘盈" width="80"/><el-table-column prop="lossQty" label="盘亏" width="80"/><el-table-column prop="freezeStatus" label="冻结" width="110"/><el-table-column prop="status" label="状态" width="120"/><el-table-column prop="createTime" label="创建时间" min-width="160"/><el-table-column label="操作" width="100"><template slot-scope="s"><el-button type="text" @click="openDetail(s.row)">详情</el-button></template></el-table-column>
+      </el-table>
+    </el-card>
+
+    <jk-business-drawer :visible.sync="createVisible" title="新建库存盘点" size="560px"><el-form :model="createForm" label-width="110px"><el-form-item label="库存账户" required><el-input-number v-model="createForm.stockAccountId" :min="1" /></el-form-item><el-form-item label="请求号" required><el-input v-model="createForm.requestNo" /></el-form-item><el-form-item label="范围"><el-select v-model="createForm.scopeType"><el-option label="整个账户" value="ACCOUNT"/></el-select></el-form-item><el-form-item label="备注"><el-input v-model="createForm.remark" type="textarea"/></el-form></jk-business-drawer>
+
+    <jk-business-drawer :visible.sync="detailVisible" title="库存盘点详情" size="860px">
+      <el-descriptions :column="3" border size="small"><el-descriptions-item label="单号">{{detail.checkNo}}</el-descriptions-item><el-descriptions-item label="状态">{{detail.status}}</el-descriptions-item><el-descriptions-item label="冻结">{{detail.freezeStatus}}</el-descriptions-item><el-descriptions-item label="账面">{{detail.bookTotalQty}}</el-descriptions-item><el-descriptions-item label="实盘">{{detail.actualTotalQty}}</el-descriptions-item><el-descriptions-item label="差异">+{{detail.profitQty||0}} / -{{detail.lossQty||0}}</el-descriptions-item></el-descriptions>
+      <el-table :data="detail.items||[]" size="mini" border style="margin-top:16px"><el-table-column prop="productId" label="商品ID"/><el-table-column prop="skuCode" label="SKU"/><el-table-column prop="bookAvailableQty" label="账面可用"/><el-table-column prop="bookFrozenQty" label="冻结"/><el-table-column prop="actualAvailableQty" label="实盘"/><el-table-column prop="differenceQty" label="差异"/><el-table-column prop="differenceType" label="类型"/><el-table-column prop="adjusted" label="已调账"><template slot-scope="s">{{s.row.adjusted?'是':'否'}}</template></el-table-column></el-table>
+      <el-timeline style="margin-top:18px"><el-timeline-item v-for="x in detail.auditLogs||[]" :key="x.id" :timestamp="x.createTime">{{x.action}}：{{x.remark||x.afterStatus}}</el-timeline-item></el-timeline>
+      <div slot="footer"><el-button @click="detailVisible=false">关闭</el-button><el-button v-if="detail.status==='SUBMITTED'" type="danger" @click="audit(false)">驳回并解冻</el-button><el-button v-if="detail.status==='SUBMITTED'" type="primary" @click="audit(true)">通过并生成调整流水</el-button></div>
+    </jk-business-drawer>
+  </div>
+</template>
+<script>
+import JkBusinessDrawer from '@/components/jkBusiness/JkBusinessDrawer'
+import { getStockCheckList,getStockCheckDetail,createStockCheck,auditStockCheck } from '@/api/jkV31'
+export default {components:{JkBusinessDrawer},data(){return{query:{page:1,limit:30,stockAccountId:null,status:''},statuses:['DRAFT','SUBMITTED','COMPLETED','REJECTED'],list:[],loading:false,createVisible:false,detailVisible:false,createForm:{stockAccountId:null,requestNo:'',scopeType:'ACCOUNT',remark:''},detail:{}}},created(){this.load()},methods:{rows(r){return(r&&r.data&&r.data.list)||(r&&r.data)||r||[]},load(){this.loading=true;getStockCheckList(this.query).then(r=>{this.list=this.rows(r)}).finally(()=>{this.loading=false})},openCreate(){this.createForm={stockAccountId:null,requestNo:'SC-'+Date.now(),scopeType:'ACCOUNT',remark:''};this.createVisible=true},submitCreate(){createStockCheck(this.createForm).then(()=>{this.$message.success('盘点草稿已创建');this.createVisible=false;this.load()})},openDetail(row){getStockCheckDetail(row.id).then(r=>{this.detail=(r&&r.data)||r||{};this.detailVisible=true})},audit(approved){this.$prompt(approved?'请输入审核备注':'请输入驳回原因','盘点审核',{inputPattern:/\S+/,inputErrorMessage:'内容不能为空'}).then(({value})=>auditStockCheck({checkId:this.detail.id,approved,remark:value}).then(()=>{this.$message.success(approved?'盘点完成':'已驳回并解冻');this.detailVisible=false;this.load()}))}}}
+</script>
+<style scoped>.head{display:flex;align-items:center;justify-content:space-between}</style>
