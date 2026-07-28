@@ -13,6 +13,7 @@ const jkBusinessRouter = {
     { path: 'region', component: () => import('@/views/jkBusiness/region/index'), name: 'jkRegion', meta: { title: '区域管理', section: 'identity' } },
     { path: 'regionAgent', component: () => import('@/views/jkBusiness/regionAgent/index'), name: 'jkRegionAgent', meta: { title: '区域代理配置', section: 'identity' } },
     { path: 'agentRelation', component: () => import('@/views/jkBusiness/agentRelation/index'), name: 'jkAgentRelation', meta: { title: '上下级关系', section: 'identity' } },
+    { path: 'relationLimit', component: () => import('@/views/jkBusiness/relationLimit/index'), name: 'jkRelationLimit', meta: { title: '绑定人数规则', section: 'identity' } },
     { path: 'relationChange', component: () => import('@/views/jkBusiness/relationChange/index'), name: 'jkRelationChange', meta: { title: '换绑申请审核', section: 'identity' } },
     { path: 'auditLog', component: () => import('@/views/jkBusiness/auditLog/index'), name: 'jkAuditLog', meta: { title: '业务审核日志', section: 'identity' } },
 
