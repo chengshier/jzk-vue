@@ -22,6 +22,7 @@ export function auditOfflineSale(data) { return request({ url: '/admin/jk/offlin
 export function getStockCheckList(params) { return request({ url: '/admin/jk/stock-check/list', method: 'get', params }) }
 export function getStockCheckDetail(id) { return request({ url: '/admin/jk/stock-check/' + id, method: 'get' }) }
 export function createStockCheck(data) { return request({ url: '/admin/jk/stock-check/create', method: 'post', data }) }
+export function submitStockCheck(data) { return request({ url: '/admin/jk/stock-check/submit', method: 'post', data }) }
 export function auditStockCheck(data) { return request({ url: '/admin/jk/stock-check/audit', method: 'post', data }) }
 export function getPromotionStats(params) { return request({ url: '/admin/jk/promotion/stat/list', method: 'get', params }) }
 export function getSubscriptionTasks(params) { return request({ url: '/admin/jk/subscription/task/list', method: 'get', params }) }
