@@ -23,3 +23,9 @@ export const disableBusinessPlan = (id, reason) => request({ url: `/admin/jk/bus
 export const getCommissionTemplates = params => request({ url: '/admin/jk/commission/rule/templates', method: 'get', params })
 export const saveCommissionTemplateDraft = data => request({ url: '/admin/jk/commission/rule/template/save', method: 'post', data })
 export const trialCommissionBySource = data => request({ url: '/admin/jk/commission/rule/trial/source', method: 'post', data })
+
+export const getPerformancePeriodList = params => request({ url: '/admin/jk/performance-period/list', method: 'get', params })
+export const getPerformancePeriodDetail = id => request({ url: `/admin/jk/performance-period/${id}`, method: 'get' })
+export const buildPerformancePeriod = data => request({ url: '/admin/jk/performance-period/build', method: 'post', data })
+export const trialPerformancePeriod = id => request({ url: `/admin/jk/performance-period/${id}/trial`, method: 'post' })
+export const closePerformancePeriod = (id, data) => request({ url: `/admin/jk/performance-period/${id}/close`, method: 'post', data })
