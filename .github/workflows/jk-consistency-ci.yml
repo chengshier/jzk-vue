@@ -1,9 +1,13 @@
 name: Jiuzhoukang admin CI
 
 on:
+  push:
+    branches:
+      - feat/jzk-v3.1-phase3-operations
   pull_request:
     branches:
       - master
+      - feat/jzk-v3.1-phase2-business
   workflow_dispatch:
 
 concurrency:
