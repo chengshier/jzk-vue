@@ -39,6 +39,7 @@ const jkBusinessRouter = {
     { path: 'stockCheck', component: () => import('@/views/jkBusiness/stockCheck/index'), name: 'jkStockCheck', meta: { title: '库存盘点', section: 'stock' } },
 
     // 商业规则、业绩、收益与资金
+    { path: 'businessPlan', component: () => import('@/views/jkBusiness/businessPlan/index'), name: 'jkBusinessPlan', meta: { title: '商业方案', section: 'finance' } },
     { path: 'performanceRecord', component: () => import('@/views/jkBusiness/performanceRecord/index'), name: 'jkPerformanceRecord', meta: { title: '业绩明细', section: 'finance' } },
     { path: 'operationProfit', component: () => import('@/views/jkBusiness/operationProfit/index'), name: 'jkOperationProfit', meta: { title: '经营收益', section: 'finance' } },
     { path: 'commissionRule', component: () => import('@/views/jkBusiness/commissionRule/index'), name: 'jkCommissionRule', meta: { title: '收益奖励规则', section: 'finance' } },
