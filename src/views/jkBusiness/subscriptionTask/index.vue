@@ -74,7 +74,7 @@ export default{
     search(){this.query.page=1;this.load()},
     reset(){this.query={page:1,limit:20,status:'',templateCode:'',receiverUserId:null};this.load()},
     loadStatus(){getSubscriptionStatus().then(r=>this.ability=r.data||r||{}).catch(()=>this.ability={ready:false})},
-    process(){processSubscriptionTasks(50).then(r=>{this.$message.success(`本次成功发送 ${Number((r&&r.data)||0)} 条`);this.load();this.loadStatus()})},
+    process(){processSubscriptionTasks(50).then(r=>{const sent=Number(r&&r.data!==undefined?r.data:(r||0));this.$message.success(`本次成功发送 ${sent} 条`);this.load();this.loadStatus()})},
     retry(row){this.$prompt('重新入队会重新读取用户当前可信小程序 openId，请填写操作原因','重新入队',{inputValue:'管理员确认配置或用户授权后重新入队',inputValidator:v=>!!String(v||'').trim()||'原因不能为空'}).then(({value})=>retrySubscriptionTask(row.id,value).then(()=>{this.$message.success('任务状态已重新计算');this.load();this.loadStatus()})).catch(()=>{})},
     canRetry(row){return row.status!=='SENT'&&row.status!=='PROCESSING'},
     templateText(v){const x=this.templates.find(i=>i.value===v);return x?x.label:v},
