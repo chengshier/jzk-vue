@@ -20,12 +20,14 @@ const jkBusinessRouter = {
     // 商品、价格和推广内容
     { path: 'priceRule', component: () => import('@/views/jkBusiness/priceRule/index'), name: 'jkPriceRule', meta: { title: '商品价格规则', section: 'product' } },
     { path: 'promotionMaterial', component: () => import('@/views/jkBusiness/promotionMaterial/index'), name: 'jkPromotionMaterial', meta: { title: '推广素材管理', section: 'product' } },
+    { path: 'promotionCode', component: () => import('@/views/jkBusiness/promotionCode/index'), name: 'jkPromotionCode', meta: { title: '真实微信推广码', section: 'product' } },
 
     // 订货、调拨与线下销售
     { path: 'platformOrder', component: () => import('@/views/jkBusiness/platformOrder/index'), name: 'jkPlatformOrder', meta: { title: '平台订货管理', section: 'trade' } },
     { path: 'stockTransfer', component: () => import('@/views/jkBusiness/stockTransfer/index'), name: 'jkStockTransfer', meta: { title: '库存调拨管理', section: 'trade' } },
     { path: 'stockTransferReturn', component: () => import('@/views/jkBusiness/stockTransferReturn/index'), name: 'jkStockTransferReturn', meta: { title: '调拨退回管理', section: 'trade' } },
     { path: 'receiveException', component: () => import('@/views/jkBusiness/receiveException/index'), name: 'jkReceiveException', meta: { title: '异常收货处理', section: 'trade' } },
+    { path: 'receiveExceptionResolution', component: () => import('@/views/jkBusiness/receiveExceptionResolution/index'), name: 'jkReceiveExceptionResolution', meta: { title: '异常收货V2方案', section: 'trade' } },
     { path: 'offlineSale', component: () => import('@/views/jkBusiness/offlineSale/index'), name: 'jkOfflineSale', meta: { title: '线下销售', section: 'trade' } },
 
     // 库存
@@ -33,6 +35,7 @@ const jkBusinessRouter = {
     { path: 'stockItem', component: () => import('@/views/jkBusiness/stockItem/index'), name: 'jkStockItem', meta: { title: '库存明细', section: 'stock' } },
     { path: 'stockFlow', component: () => import('@/views/jkBusiness/stockFlow/index'), name: 'jkStockFlow', meta: { title: '库存流水', section: 'stock' } },
     { path: 'stockBatch', component: () => import('@/views/jkBusiness/stockBatch/index'), name: 'jkStockBatch', meta: { title: '批次与库龄', section: 'stock' } },
+    { path: 'stockCheck', component: () => import('@/views/jkBusiness/stockCheck/index'), name: 'jkStockCheck', meta: { title: '库存盘点', section: 'stock' } },
 
     // 业绩、收益与资金
     { path: 'performanceRecord', component: () => import('@/views/jkBusiness/performanceRecord/index'), name: 'jkPerformanceRecord', meta: { title: '业绩明细', section: 'finance' } },
@@ -63,6 +66,7 @@ const jkBusinessRouter = {
     { path: 'healthAccessLog', component: () => import('@/views/jkBusiness/healthAccessLog/index'), name: 'jkHealthAccessLog', meta: { title: '健康访问日志', section: 'health' } },
     { path: 'healthSync', component: () => import('@/views/jkBusiness/healthSync/index'), name: 'jkHealthSync', meta: { title: '健康同步日志', section: 'health' } },
     { path: 'healthIntegration', component: () => import('@/views/jkBusiness/healthIntegration/index'), name: 'jkHealthIntegration', meta: { title: '健康接入状态', section: 'health' } },
+    { path: 'healthReport', component: () => import('@/views/jkBusiness/healthReport/index'), name: 'jkHealthReport', meta: { title: '健康周报月报', section: 'health' } },
 
     // 系统配置与运维
     { path: 'businessRole', component: () => import('@/views/jkBusiness/businessRole/index'), name: 'jkBusinessRole', meta: { title: '系统·业务角色', section: 'system' } },
@@ -71,6 +75,7 @@ const jkBusinessRouter = {
     { path: 'dict', component: () => import('@/views/jkBusiness/dict/index'), name: 'jkDict', meta: { title: '系统·业务字典', section: 'system' } },
     { path: 'businessEvent', component: () => import('@/views/jkBusiness/businessEvent/index'), name: 'jkBusinessEvent', meta: { title: '运维·事件补偿', section: 'system' } },
     { path: 'accountReconcile', component: () => import('@/views/jkBusiness/accountReconcile/index'), name: 'jkAccountReconcile', meta: { title: '运维·账户对账', section: 'system' } },
+    { path: 'subscriptionTask', component: () => import('@/views/jkBusiness/subscriptionTask/index'), name: 'jkSubscriptionTask', meta: { title: '微信消息任务', section: 'system' } },
   ],
 };
 
