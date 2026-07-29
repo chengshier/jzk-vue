@@ -1,0 +1,37 @@
+name: jk-v31-e-register-promotion-effect
+on:
+  push:
+    branches: [feat/jzk-v3.1-phase3-operations]
+    paths: ['.github/workflows/jk-v31-e-register-promotion-effect.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/jzk-v3.1-phase3-operations
+          fetch-depth: 0
+      - name: Register promotion effect route
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/router/modules/jkBusiness.js')
+          s=p.read_text(encoding='utf-8')
+          anchor="    { path: 'promotionCode', component: () => import('@/views/jkBusiness/promotionCode/index'), name: 'jkPromotionCode', meta: { title: '真实微信推广码', section: 'product' } },"
+          line="    { path: 'promotionEffect', component: () => import('@/views/jkBusiness/promotionEffect/index'), name: 'jkPromotionEffect', meta: { title: '推广效果统计', section: 'product' } },\n"
+          if "path: 'promotionEffect'" not in s:
+              if anchor not in s: raise SystemExit('route anchor missing')
+              s=s.replace(anchor,anchor+'\n'+line,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit and remove workflow
+        run: |
+          rm -f .github/workflows/jk-v31-e-register-promotion-effect.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/router/modules/jkBusiness.js .github/workflows/jk-v31-e-register-promotion-effect.yml
+          git commit -m 'feat(jzk-v3.1-e): 注册推广效果统计路由'
+          git push origin HEAD:feat/jzk-v3.1-phase3-operations
