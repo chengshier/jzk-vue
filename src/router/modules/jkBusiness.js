@@ -21,6 +21,8 @@ const jkBusinessRouter = {
     { path: 'priceRule', component: () => import('@/views/jkBusiness/priceRule/index'), name: 'jkPriceRule', meta: { title: '商品价格规则', section: 'product' } },
     { path: 'promotionMaterial', component: () => import('@/views/jkBusiness/promotionMaterial/index'), name: 'jkPromotionMaterial', meta: { title: '推广素材管理', section: 'product' } },
     { path: 'promotionCode', component: () => import('@/views/jkBusiness/promotionCode/index'), name: 'jkPromotionCode', meta: { title: '真实微信推广码', section: 'product' } },
+    { path: 'promotionEffect', component: () => import('@/views/jkBusiness/promotionEffect/index'), name: 'jkPromotionEffect', meta: { title: '推广效果统计', section: 'product' } },
+
 
     // 订货、调拨、零售归属与线下销售
     { path: 'platformOrder', component: () => import('@/views/jkBusiness/platformOrder/index'), name: 'jkPlatformOrder', meta: { title: '平台订货管理', section: 'trade' } },
