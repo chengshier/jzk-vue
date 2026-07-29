@@ -22,10 +22,11 @@ const jkBusinessRouter = {
     { path: 'promotionMaterial', component: () => import('@/views/jkBusiness/promotionMaterial/index'), name: 'jkPromotionMaterial', meta: { title: '推广素材管理', section: 'product' } },
     { path: 'promotionCode', component: () => import('@/views/jkBusiness/promotionCode/index'), name: 'jkPromotionCode', meta: { title: '真实微信推广码', section: 'product' } },
 
-    // 订货、调拨与线下销售
+    // 订货、调拨、零售归属与线下销售
     { path: 'platformOrder', component: () => import('@/views/jkBusiness/platformOrder/index'), name: 'jkPlatformOrder', meta: { title: '平台订货管理', section: 'trade' } },
     { path: 'stockTransfer', component: () => import('@/views/jkBusiness/stockTransfer/index'), name: 'jkStockTransfer', meta: { title: '库存调拨管理', section: 'trade' } },
     { path: 'stockTransferReturn', component: () => import('@/views/jkBusiness/stockTransferReturn/index'), name: 'jkStockTransferReturn', meta: { title: '调拨退回管理', section: 'trade' } },
+    { path: 'retailAttribution', component: () => import('@/views/jkBusiness/retailAttribution/index'), name: 'jkRetailAttribution', meta: { title: '零售订单归属', section: 'trade' } },
     { path: 'receiveException', component: () => import('@/views/jkBusiness/receiveException/index'), name: 'jkReceiveException', meta: { title: '异常收货处理', section: 'trade' } },
     { path: 'receiveExceptionResolution', component: () => import('@/views/jkBusiness/receiveExceptionResolution/index'), name: 'jkReceiveExceptionResolution', meta: { title: '异常收货V2方案', section: 'trade' } },
     { path: 'offlineSale', component: () => import('@/views/jkBusiness/offlineSale/index'), name: 'jkOfflineSale', meta: { title: '线下销售', section: 'trade' } },
@@ -37,7 +38,7 @@ const jkBusinessRouter = {
     { path: 'stockBatch', component: () => import('@/views/jkBusiness/stockBatch/index'), name: 'jkStockBatch', meta: { title: '批次与库龄', section: 'stock' } },
     { path: 'stockCheck', component: () => import('@/views/jkBusiness/stockCheck/index'), name: 'jkStockCheck', meta: { title: '库存盘点', section: 'stock' } },
 
-    // 业绩、收益与资金
+    // 商业规则、业绩、收益与资金
     { path: 'performanceRecord', component: () => import('@/views/jkBusiness/performanceRecord/index'), name: 'jkPerformanceRecord', meta: { title: '业绩明细', section: 'finance' } },
     { path: 'operationProfit', component: () => import('@/views/jkBusiness/operationProfit/index'), name: 'jkOperationProfit', meta: { title: '经营收益', section: 'finance' } },
     { path: 'commissionRule', component: () => import('@/views/jkBusiness/commissionRule/index'), name: 'jkCommissionRule', meta: { title: '收益奖励规则', section: 'finance' } },
