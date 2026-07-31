@@ -32,6 +32,7 @@
                 />
                 <el-button
                   v-if="isMinioUploadConfig && tabItem.extra === activeNamel2"
+                  v-hasPermi="['admin:system:config:minio:test']"
                   type="primary"
                   plain
                   @click="testMinioConfig"
@@ -67,6 +68,7 @@ import Template from '@/views/appSetting/wxAccount/wxTemplate/index';
 import { beautifierConf } from '@/components/FormGenerator/utils';
 import { checkPermi } from '@/utils/permission'; // 权限判断函数
 import { Debounce } from '@/utils/validate';
+import { getMinioConfigFormData } from '@/utils/minioConfig';
 export default {
   // name: "index",
   components: { Template, parser },
@@ -235,8 +237,7 @@ export default {
     },
     getMinioFormData() {
       const form = this.$refs['uploadConfigForm-' + this.activeNamel2];
-      const parser = Array.isArray(form) ? form[0] : form;
-      return parser && parser.formData ? { ...parser.formData } : {};
+      return getMinioConfigFormData(form);
     },
     testMinioConfig() {
       systemConfigApi

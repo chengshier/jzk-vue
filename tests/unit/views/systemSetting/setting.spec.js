@@ -18,6 +18,7 @@ describe('system setting MinIO connection test contract', () => {
   it('renders the connection test only for the MinIO upload tab', () => {
     expect(settingView).toMatch(/v-if="isMinioUploadConfig && tabItem\.extra === activeNamel2"/)
     expect(settingView).toMatch(/@click="testMinioConfig"/)
+    expect(settingView).toMatch(/v-hasPermi="\['admin:system:config:minio:test'\]"/)
   })
 
   it('tests unsaved values through the MinIO endpoint without saving the form', () => {
@@ -42,8 +43,7 @@ describe('system setting MinIO connection test contract', () => {
     const method = settingView.match(/getMinioFormData\(\)\s*\{([\s\S]*?)\n\s*\},/)
 
     expect(method).not.toBeNull()
-    expect(method[1]).toMatch(/const parser = Array\.isArray\(form\) \? form\[0\] : form/)
-    expect(method[1]).toMatch(/parser && parser\.formData \? \{ \.\.\.parser\.formData \} : \{\}/)
+    expect(method[1]).toMatch(/return getMinioConfigFormData\(form\)/)
     expect(method[1]).not.toMatch(/currentEditData/)
   })
 
@@ -59,5 +59,7 @@ describe('system setting MinIO connection test contract', () => {
     expect(minioMigration).toMatch(/INSERT INTO `eb_system_config`[\s\S]*?WHERE[\s\S]*?NOT EXISTS/)
     expect(minioMigration).toMatch(/INSERT INTO `eb_system_menu`[\s\S]*?WHERE[\s\S]*?NOT EXISTS/)
     expect(minioMigration).toMatch(/INSERT INTO `eb_system_role_menu`[\s\S]*?ON DUPLICATE KEY UPDATE/)
+    expect(minioMigration).toMatch(/UPDATE `eb_system_config`[\s\S]*?`form_id` = @minio_form_id[\s\S]*?`name` IN \(/)
+    expect(minioMigration).toMatch(/`form_id` IS NULL OR `form_id` <> @minio_form_id/)
   })
 })
