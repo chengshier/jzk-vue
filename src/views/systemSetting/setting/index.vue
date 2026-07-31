@@ -235,7 +235,8 @@ export default {
     },
     getMinioFormData() {
       const form = this.$refs['uploadConfigForm-' + this.activeNamel2];
-      return form && form.formData ? { ...form.formData } : { ...this.currentEditData };
+      const parser = Array.isArray(form) ? form[0] : form;
+      return parser && parser.formData ? { ...parser.formData } : {};
     },
     testMinioConfig() {
       systemConfigApi
