@@ -44,7 +44,7 @@
         <el-table-column label="奖励给谁" width="125"><template slot-scope="{row}">{{ roleName(row.receiverRoleCode) }}</template></el-table-column>
         <el-table-column label="什么时候发奖" min-width="180"><template slot-scope="{row}">{{ scenarioText(row.templateCode) }}</template></el-table-column>
         <el-table-column label="奖励多少" width="135"><template slot-scope="{row}">{{ rewardText(row) }}</template></el-table-column>
-        <el-table-column label="封顶" width="130"><template slot-scope="{row}">{{ capText(row) }}</template></el-table-column>
+        <el-table-column label="封顶与预算" min-width="180"><template slot-scope="{row}">{{ capText(row) }}</template></el-table-column>
         <el-table-column label="发布状态" width="125">
           <template slot-scope="{row}"><el-tag :type="publishTag(row.publishStatus)">{{ publishText(row.publishStatus) }}</el-tag><div class="hint">{{ row.status ? '业务开关开启' : '业务开关关闭' }}</div></template>
         </el-table-column>
@@ -82,7 +82,7 @@
         </el-form-item>
         <el-row :gutter="16">
           <el-col :span="12"><el-form-item label="奖励方式" required><el-select v-model="form.rewardMode" style="width:100%"><el-option label="按有效金额比例" value="PERCENT"/><el-option v-if="!selectedTemplate || !selectedTemplate.supportsPeriod" label="每单固定金额" value="FIXED_PER_ORDER"/><el-option v-if="!selectedTemplate || !selectedTemplate.supportsPeriod" label="每件固定金额" value="FIXED_PER_ITEM"/></el-select></el-form-item></el-col>
-          <el-col :span="12"><el-form-item :label="form.rewardMode === 'PERCENT' ? '奖励比例(%)' : '奖励金额(元)'" required><el-input-number v-model="form.rewardValue" :min="0" :precision="form.rewardMode === 'PERCENT' ? 4 : 2" style="width:100%"/></el-form-item></el-col>
+          <el-col :span="12"><el-form-item :label="form.rewardMode === 'PERCENT' ? '奖励比例(%)' : '奖励金额(元)'" required><el-input-number v-model="form.rewardValue" :min="form.rewardMode === 'PERCENT' ? 0.0001 : 0.01" :precision="form.rewardMode === 'PERCENT' ? 4 : 2" style="width:100%"/><div class="form-hint">必须大于 0；未确定真实数值时不要保存为 0。</div></el-form-item></el-col>
         </el-row>
         <template v-if="selectedTemplate && selectedTemplate.supportsPeriod">
           <el-row :gutter="16">
@@ -96,9 +96,10 @@
           </el-select>
         </el-form-item>
         <el-row :gutter="16">
-          <el-col :span="12"><el-form-item label="单笔封顶(元)"><el-input-number v-model="form.perOrderCap" :min="0" :precision="2" style="width:100%"/></el-form-item></el-col>
-          <el-col :span="12"><el-form-item label="周期封顶(元)"><el-input-number v-model="form.perUserPeriodCap" :min="0" :precision="2" style="width:100%"/></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="单笔封顶(元)"><el-input-number v-model="form.perOrderCap" :min="0.01" :precision="2" style="width:100%"/><div class="form-hint">留空表示不限制</div></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="周期封顶(元)"><el-input-number v-model="form.perUserPeriodCap" :min="0.01" :precision="2" style="width:100%"/><div class="form-hint">留空表示不限制</div></el-form-item></el-col>
         </el-row>
+        <el-form-item label="规则总预算(元)"><el-input-number v-model="form.totalBudget" :min="0.01" :precision="2" style="width:100%"/><div class="form-hint">留空表示不限制；预算耗尽后不再生成新的平台应付奖励。</div></el-form-item>
         <el-form-item label="结算等待(天)"><el-input-number v-model="form.settleDelayDays" :min="0" :max="365"/></el-form-item>
         <el-form-item label="备注"><el-input v-model.trim="form.remark" type="textarea" :rows="3" maxlength="500" show-word-limit/></el-form-item>
         <el-alert title="保存后只生成关闭状态的草稿，不会自动发布，也不会产生佣金。" type="warning" :closable="false" show-icon/>
@@ -153,13 +154,13 @@
     </el-dialog>
 
     <el-drawer title="奖励规则业务解释" :visible.sync="detailVisible" size="720px">
-      <div class="drawer-body" v-if="detailRule">
+      <div v-if="detailRule" class="drawer-body">
         <el-descriptions :column="2" border size="small">
           <el-descriptions-item label="为什么发奖励">{{ scenarioText(detailRule.templateCode) }}</el-descriptions-item>
           <el-descriptions-item label="奖励给谁">{{ roleName(detailRule.receiverRoleCode) }}</el-descriptions-item>
           <el-descriptions-item label="按什么计算">{{ baseText(detailRule.templateCode) }}</el-descriptions-item>
           <el-descriptions-item label="奖励多少">{{ rewardText(detailRule) }}</el-descriptions-item>
-          <el-descriptions-item label="是否封顶">{{ capText(detailRule) }}</el-descriptions-item>
+          <el-descriptions-item label="封顶与预算">{{ capText(detailRule) }}</el-descriptions-item>
           <el-descriptions-item label="收益性质">平台另行支付（PLATFORM_PAYABLE）</el-descriptions-item>
           <el-descriptions-item label="什么时候生效">{{ detailRule.effectiveStartTime || '尚未发布' }}</el-descriptions-item>
           <el-descriptions-item label="状态">{{ publishText(detailRule.publishStatus) }}</el-descriptions-item>
@@ -171,57 +172,204 @@
 </template>
 
 <script>
-import { getJkCommissionRuleList } from '@/api/jkBusiness'
-import { publishJkCommissionRule, disableJkCommissionRule } from '@/api/jkV31Business'
-import { getBusinessPlanList, getCommissionTemplates, saveCommissionTemplateDraft, trialCommissionBySource, getJkRegionOptions } from '@/api/jkGapfix'
+import { getJkCommissionRuleList } from '@/api/jkBusiness';
+import { publishJkCommissionRule, disableJkCommissionRule } from '@/api/jkV31Business';
+import { getBusinessPlanList, getCommissionTemplates, saveCommissionTemplateDraft, trialCommissionBySource, getJkRegionOptions } from '@/api/jkGapfix';
 
-const emptyForm = () => ({ planId:null,templateCode:'',ruleName:'',receiverRoleCode:'',rewardMode:'PERCENT',rewardValue:null,productIds:[],regionCodes:[],performanceThreshold:null,periodType:'MONTH',perOrderCap:null,perUserPeriodCap:null,settleDelayDays:0,remark:'' })
+const emptyForm = () => ({
+  planId: null,
+  templateCode: '',
+  ruleName: '',
+  receiverRoleCode: '',
+  rewardMode: 'PERCENT',
+  rewardValue: null,
+  productIds: [],
+  regionCodes: [],
+  performanceThreshold: null,
+  periodType: 'MONTH',
+  perOrderCap: null,
+  perUserPeriodCap: null,
+  totalBudget: null,
+  settleDelayDays: 0,
+  remark: '',
+});
+
 export default {
   data() {
     return {
-      loading:false,saving:false,optionLoading:false,trialLoading:false,
-      query:{receiverRoleCode:'',publishStatus:''},list:[],templates:[],draftPlans:[],regionOptions:[],
-      formVisible:false,form:emptyForm(),selectedTemplate:null,
-      trialVisible:false,trialRule:null,trialForm:{sourceType:'RETAIL_ORDER',sourceNo:''},trialPayload:null,trialResults:[],trialExecuted:false,
-      publishVisible:false,publishRule:null,publishForm:{effectiveStartTime:'',effectiveEndTime:'',remark:''},
-      detailVisible:false,detailRule:null
-    }
+      loading: false,
+      saving: false,
+      optionLoading: false,
+      trialLoading: false,
+      query: { receiverRoleCode: '', publishStatus: '' },
+      list: [],
+      templates: [],
+      draftPlans: [],
+      regionOptions: [],
+      formVisible: false,
+      form: emptyForm(),
+      selectedTemplate: null,
+      trialVisible: false,
+      trialRule: null,
+      trialForm: { sourceType: 'RETAIL_ORDER', sourceNo: '' },
+      trialPayload: null,
+      trialResults: [],
+      trialExecuted: false,
+      publishVisible: false,
+      publishRule: null,
+      publishForm: { effectiveStartTime: '', effectiveEndTime: '', remark: '' },
+      detailVisible: false,
+      detailRule: null,
+    };
   },
   computed: {
-    allowedRoles(){return this.selectedTemplate && this.selectedTemplate.receiverRoles ? this.selectedTemplate.receiverRoles : ['maker','partner','county_agent']},
-    sourcePlaceholder(){return {RETAIL_ORDER:'输入商城订单号',OFFLINE_SALE:'输入线下销售单号',PLATFORM_ORDER:'输入平台订货单号',STOCK_TRANSFER:'输入库存调拨单号',PERFORMANCE_PERIOD:'输入业绩编号'}[this.trialForm.sourceType]||'输入真实业务单号'}
+    allowedRoles() {
+      return this.selectedTemplate && this.selectedTemplate.receiverRoles
+        ? this.selectedTemplate.receiverRoles
+        : ['maker', 'partner', 'county_agent'];
+    },
+    sourcePlaceholder() {
+      return {
+        RETAIL_ORDER: '输入商城订单号',
+        OFFLINE_SALE: '输入线下销售单号',
+        PLATFORM_ORDER: '输入平台订货单号',
+        STOCK_TRANSFER: '输入库存调拨单号',
+        PERFORMANCE_PERIOD: '输入业绩编号',
+      }[this.trialForm.sourceType] || '输入真实业务单号';
+    },
   },
-  created(){this.loadTemplates();this.loadPlans();this.load()},
+  created() {
+    this.loadTemplates();
+    this.loadPlans();
+    this.load();
+  },
   methods: {
-    unwrap(r){return (r&&r.data)||r||[]},
-    loadTemplates(){getCommissionTemplates({}).then(r=>{this.templates=this.unwrap(r);const code=this.$route.query.templateCode;if(code){const target=this.templates.find(x=>x.templateCode===code);if(target)this.openTemplate(target)}})},
-    loadPlans(){getBusinessPlanList({publishStatus:'DRAFT'}).then(r=>{this.draftPlans=this.unwrap(r)})},
-    load(){this.loading=true;getJkCommissionRuleList({receiverRoleCode:this.query.receiverRoleCode,status:null}).then(r=>{let rows=this.unwrap(r);if(this.query.publishStatus)rows=rows.filter(x=>x.publishStatus===this.query.publishStatus);this.list=rows}).finally(()=>{this.loading=false})},
-    openTemplateSelector(){this.form=emptyForm();this.selectedTemplate=null;this.formVisible=true},
-    openTemplate(template){this.selectedTemplate=template;this.form=emptyForm();this.form.templateCode=template.templateCode;this.form.receiverRoleCode=(template.receiverRoles||[])[0]||'';this.form.ruleName=template.templateName;this.form.rewardMode=template.supportsPeriod?'PERCENT':'PERCENT';const role=this.$route.query.roleCode;if(role&&(template.receiverRoles||[]).includes(role))this.form.receiverRoleCode=role;this.formVisible=true},
-    templateChanged(code){this.selectedTemplate=this.templates.find(x=>x.templateCode===code)||null;if(this.selectedTemplate&&!this.allowedRoles.includes(this.form.receiverRoleCode))this.form.receiverRoleCode=this.allowedRoles[0]||'';if(this.selectedTemplate)this.form.ruleName=this.form.ruleName||this.selectedTemplate.templateName},
-    searchRegions(keyword){if(!keyword)return;this.optionLoading=true;getJkRegionOptions({keyword,targetLevel:3,enabled:true}).then(r=>{this.regionOptions=this.unwrap(r)}).finally(()=>{this.optionLoading=false})},
-    saveTemplate(){if(!this.form.planId||!this.form.templateCode||!this.form.ruleName||!this.form.receiverRoleCode||this.form.rewardValue===null)return this.$message.warning('请补齐商业方案、奖励模板、规则名称、受益身份和奖励数值');if(this.selectedTemplate&&this.selectedTemplate.supportsPeriod&&(!this.form.periodType||!this.form.performanceThreshold))return this.$message.warning('周期奖励必须填写统计周期和业绩门槛');this.saving=true;saveCommissionTemplateDraft(this.form).then(()=>{this.$message.success('奖励草稿已保存，当前仍为关闭状态');this.formVisible=false;this.load();this.loadPlans()}).finally(()=>{this.saving=false})},
-    openSourceTrial(row){this.trialRule=row;this.trialForm={sourceType:row.sourceType||'RETAIL_ORDER',sourceNo:''};this.trialPayload=null;this.trialResults=[];this.trialExecuted=false;this.trialVisible=true},
-    runSourceTrial(){if(!this.trialForm.sourceNo)return this.$message.warning('请输入真实业务单号');this.trialLoading=true;this.trialExecuted=false;trialCommissionBySource({ruleId:this.trialRule.id,sourceType:this.trialForm.sourceType,sourceNo:this.trialForm.sourceNo}).then(r=>{this.trialPayload=(r&&r.data)||r||{};this.trialResults=this.trialPayload.trialResults||[];this.trialExecuted=true}).finally(()=>{this.trialLoading=false})},
-    openPublish(row){this.publishRule=row;this.publishForm={effectiveStartTime:'',effectiveEndTime:'',remark:''};this.publishVisible=true},
-    publish(){if(!this.publishForm.effectiveStartTime)return this.$message.warning('请选择生效时间');this.saving=true;publishJkCommissionRule({ruleId:this.publishRule.id,...this.publishForm}).then(()=>{this.$message.success('规则已发布，仅影响生效后的新业务');this.publishVisible=false;this.load()}).finally(()=>{this.saving=false})},
-    disable(row){this.$prompt('请输入停用原因','停用奖励规则',{inputType:'textarea'}).then(({value})=>disableJkCommissionRule(row.id,value).then(()=>{this.$message.success('规则已停用，只影响后续新业务');this.load()})).catch(()=>{})},
-    showBusinessDetail(row){this.detailRule=row;this.detailVisible=true},
-    roleName(code){return {maker:'创客',partner:'合伙人',county_agent:'区县代理'}[code]||code||'未配置'},
-    templateName(code){const t=this.templates.find(x=>x.templateCode===code);return t?t.templateName:(code||'旧版高级规则')},
-    scenarioText(code){return {DIRECT_REFERRAL:'有效终端零售完成后奖励下单时直属推荐人',SELF_RETAIL:'经核验的线下终端销售完成后奖励实际销售人',TEAM_MANAGEMENT:'统计周期有效终端销售达到门槛后奖励团队负责人',REGION_MANAGEMENT:'区域内有效终端零售完成后奖励订单快照中的区县代理',PLATFORM_ORDER_SUBSIDY:'平台订货真实入库后按已发布规则补贴',TRANSFER_PLATFORM_SUBSIDY:'库存调拨真实完成后按已发布规则补贴',TIER_REWARD:'统计周期有效终端销售达到阶梯门槛后奖励'}[code]||'按已固化业务快照和已发布规则判断'},
-    baseText(code){return ['TEAM_MANAGEMENT','TIER_REWARD'].includes(code)?'统计周期有效终端销售业绩':'有效业务的实付金额或模板规定基数'},
-    rewardText(row){if(row.rate==null&&row.fixedAmount==null&&row.unitAmount==null)return '未配置 / 未发布';if(['PERCENT','TIER_PERCENT'].includes(row.calculationType))return row.rate==null?'未配置':`${row.rate}%`;const amount=row.fixedAmount!=null?row.fixedAmount:row.unitAmount;return amount==null?'未配置':`¥${Number(amount).toFixed(2)}`},
-    capText(row){const values=[];if(row.perOrderCap!=null)values.push(`单笔 ¥${Number(row.perOrderCap).toFixed(2)}`);if(row.perUserPeriodCap!=null)values.push(`周期 ¥${Number(row.perUserPeriodCap).toFixed(2)}`);return values.length?values.join(' / '):'未设置封顶'},
-    publishText(v){return {DRAFT:'草稿 / 关闭',PUBLISHED:'已发布',DISABLED:'已停用'}[v]||v||'草稿 / 关闭'},
-    publishTag(v){return v==='PUBLISHED'?'success':v==='DISABLED'?'info':'warning'},
-    snapshotLabel(id,empty){return id?`业务快照用户 #${id}`:empty},
-    money(v){return Number(v||0).toFixed(2)},
-    matchText(v){return {MATCHED:'命中',NOT_MATCHED:'未命中',EXCLUDED_BY_STACK:'叠加策略排除',NO_ACTIVE_RULE:'无生效规则',NO_PAYABLE_MATCH:'无可支付匹配'}[v]||v},
-    reasonText(v){return {REGION_NOT_MATCH:'业务区域不匹配',REGISTERED_CUSTOMER_REQUIRED:'要求注册客户',VOUCHER_REQUIRED:'要求真实凭证',AUDIT_REQUIRED:'要求审核通过',BENEFICIARY_NOT_FOUND:'业务快照未解析受益人',BUSINESS_SCOPE_NOT_MATCH:'不在商品、区域或周期门槛范围',CALCULATION_CONFIG_INCOMPLETE:'奖励数值尚未配置'}[v]||v}
-  }
-}
+    unwrap(r) { return (r && r.data) || r || []; },
+    loadTemplates() {
+      getCommissionTemplates({}).then((r) => {
+        this.templates = this.unwrap(r);
+        const code = this.$route.query.templateCode;
+        if (code) {
+          const target = this.templates.find((x) => x.templateCode === code);
+          if (target) this.openTemplate(target);
+        }
+      });
+    },
+    loadPlans() {
+      getBusinessPlanList({ publishStatus: 'DRAFT' }).then((r) => { this.draftPlans = this.unwrap(r); });
+    },
+    load() {
+      this.loading = true;
+      getJkCommissionRuleList({ receiverRoleCode: this.query.receiverRoleCode, status: null })
+        .then((r) => {
+          let rows = this.unwrap(r);
+          if (this.query.publishStatus) rows = rows.filter((x) => x.publishStatus === this.query.publishStatus);
+          this.list = rows;
+        })
+        .finally(() => { this.loading = false; });
+    },
+    openTemplateSelector() { this.form = emptyForm(); this.selectedTemplate = null; this.formVisible = true; },
+    openTemplate(template) {
+      this.selectedTemplate = template;
+      this.form = emptyForm();
+      this.form.templateCode = template.templateCode;
+      this.form.receiverRoleCode = (template.receiverRoles || [])[0] || '';
+      this.form.ruleName = template.templateName;
+      const role = this.$route.query.roleCode;
+      if (role && (template.receiverRoles || []).includes(role)) this.form.receiverRoleCode = role;
+      this.formVisible = true;
+    },
+    templateChanged(code) {
+      this.selectedTemplate = this.templates.find((x) => x.templateCode === code) || null;
+      if (this.selectedTemplate && !this.allowedRoles.includes(this.form.receiverRoleCode)) this.form.receiverRoleCode = this.allowedRoles[0] || '';
+      if (this.selectedTemplate) this.form.ruleName = this.form.ruleName || this.selectedTemplate.templateName;
+    },
+    searchRegions(keyword) {
+      if (!keyword) return;
+      this.optionLoading = true;
+      getJkRegionOptions({ keyword, targetLevel: 3, enabled: true })
+        .then((r) => { this.regionOptions = this.unwrap(r); })
+        .finally(() => { this.optionLoading = false; });
+    },
+    saveTemplate() {
+      if (!this.form.planId || !this.form.templateCode || !this.form.ruleName || !this.form.receiverRoleCode || this.form.rewardValue === null) return this.$message.warning('请补齐商业方案、奖励模板、规则名称、受益身份和奖励数值');
+      if (Number(this.form.rewardValue) <= 0) return this.$message.warning('奖励数值必须大于 0，未配置时不要填写 0');
+      if ([this.form.perOrderCap, this.form.perUserPeriodCap, this.form.totalBudget].some((v) => v !== null && v !== undefined && Number(v) <= 0)) return this.$message.warning('封顶和总预算填写后必须大于 0，留空表示不限制');
+      if (this.selectedTemplate && this.selectedTemplate.supportsPeriod && (!this.form.periodType || !this.form.performanceThreshold)) return this.$message.warning('周期奖励必须填写统计周期和业绩门槛');
+      this.saving = true;
+      saveCommissionTemplateDraft(this.form)
+        .then(() => {
+          this.$message.success('奖励草稿已保存，当前仍为关闭状态');
+          this.formVisible = false;
+          this.load();
+          this.loadPlans();
+        })
+        .finally(() => { this.saving = false; });
+    },
+    openSourceTrial(row) {
+      this.trialRule = row;
+      this.trialForm = { sourceType: row.sourceType || 'RETAIL_ORDER', sourceNo: '' };
+      this.trialPayload = null;
+      this.trialResults = [];
+      this.trialExecuted = false;
+      this.trialVisible = true;
+    },
+    runSourceTrial() {
+      if (!this.trialForm.sourceNo) return this.$message.warning('请输入真实业务单号');
+      this.trialLoading = true;
+      this.trialExecuted = false;
+      trialCommissionBySource({ ruleId: this.trialRule.id, sourceType: this.trialForm.sourceType, sourceNo: this.trialForm.sourceNo })
+        .then((r) => {
+          this.trialPayload = (r && r.data) || r || {};
+          this.trialResults = this.trialPayload.trialResults || [];
+          this.trialExecuted = true;
+        })
+        .finally(() => { this.trialLoading = false; });
+    },
+    openPublish(row) { this.publishRule = row; this.publishForm = { effectiveStartTime: '', effectiveEndTime: '', remark: '' }; this.publishVisible = true; },
+    publish() {
+      if (!this.publishForm.effectiveStartTime) return this.$message.warning('请选择生效时间');
+      this.saving = true;
+      publishJkCommissionRule({ ruleId: this.publishRule.id, ...this.publishForm })
+        .then(() => {
+          this.$message.success('规则已发布，仅影响生效后的新业务');
+          this.publishVisible = false;
+          this.load();
+        })
+        .finally(() => { this.saving = false; });
+    },
+    disable(row) {
+      this.$prompt('请输入停用原因', '停用奖励规则', { inputType: 'textarea' })
+        .then(({ value }) => disableJkCommissionRule(row.id, value)
+          .then(() => { this.$message.success('规则已停用，只影响后续新业务'); this.load(); }))
+        .catch(() => {});
+    },
+    showBusinessDetail(row) { this.detailRule = row; this.detailVisible = true; },
+    roleName(code) { return { maker: '创客', partner: '合伙人', county_agent: '区县代理' }[code] || code || '未配置'; },
+    templateName(code) { const t = this.templates.find((x) => x.templateCode === code); return t ? t.templateName : (code || '旧版高级规则'); },
+    scenarioText(code) { return { DIRECT_REFERRAL: '有效终端零售完成后奖励下单时直属推荐人', SELF_RETAIL: '经核验的线下终端销售完成后奖励实际销售人', TEAM_MANAGEMENT: '统计周期有效终端销售达到门槛后奖励团队负责人', REGION_MANAGEMENT: '区域内有效终端零售完成后奖励订单快照中的区县代理', PLATFORM_ORDER_SUBSIDY: '平台订货真实入库后按已发布规则补贴', TRANSFER_PLATFORM_SUBSIDY: '库存调拨真实完成后按已发布规则补贴', TIER_REWARD: '统计周期有效终端销售达到阶梯门槛后奖励' }[code] || '按已固化业务快照和已发布规则判断'; },
+    baseText(code) { return ['TEAM_MANAGEMENT', 'TIER_REWARD'].includes(code) ? '统计周期有效终端销售业绩' : '商品实付净额（优惠分摊后，不含运费）或模板规定的真实业务基数'; },
+    rewardText(row) {
+      if (row.rate == null && row.fixedAmount == null && row.unitAmount == null) return '未配置 / 未发布';
+      if (['PERCENT', 'TIER_PERCENT'].includes(row.calculationType)) return row.rate == null || Number(row.rate) <= 0 ? '未配置 / 未发布' : `${row.rate}%`;
+      const amount = row.fixedAmount != null ? row.fixedAmount : row.unitAmount;
+      return amount == null || Number(amount) <= 0 ? '未配置 / 未发布' : `¥${Number(amount).toFixed(2)}`;
+    },
+    capText(row) {
+      const values = [];
+      if (row.perOrderCap != null && Number(row.perOrderCap) > 0) values.push(`单笔 ¥${Number(row.perOrderCap).toFixed(2)}`);
+      if (row.perUserPeriodCap != null && Number(row.perUserPeriodCap) > 0) values.push(`周期 ¥${Number(row.perUserPeriodCap).toFixed(2)}`);
+      if (row.totalBudget != null && Number(row.totalBudget) > 0) values.push(`总预算 ¥${Number(row.totalBudget).toFixed(2)}`);
+      return values.length ? values.join(' / ') : '未设置限制';
+    },
+    publishText(v) { return { DRAFT: '草稿 / 关闭', PUBLISHED: '已发布', DISABLED: '已停用' }[v] || v || '草稿 / 关闭'; },
+    publishTag(v) { return v === 'PUBLISHED' ? 'success' : v === 'DISABLED' ? 'info' : 'warning'; },
+    snapshotLabel(id, empty) { return id ? `业务快照用户 #${id}` : empty; },
+    money(v) { return Number(v || 0).toFixed(2); },
+    matchText(v) { return { MATCHED: '命中', NOT_MATCHED: '未命中', EXCLUDED_BY_STACK: '叠加策略排除', NO_ACTIVE_RULE: '无生效规则', NO_PAYABLE_MATCH: '无可支付匹配' }[v] || v; },
+    reasonText(v) { return { REGION_NOT_MATCH: '业务区域不匹配', REGISTERED_CUSTOMER_REQUIRED: '要求注册客户', VOUCHER_REQUIRED: '要求真实凭证', AUDIT_REQUIRED: '要求审核通过', BENEFICIARY_NOT_FOUND: '业务快照未解析受益人', BUSINESS_SCOPE_NOT_MATCH: '不在商品、区域或周期门槛范围', CALCULATION_CONFIG_INCOMPLETE: '奖励数值尚未配置' }[v] || v; },
+  },
+};
 </script>
 
 <style scoped>
