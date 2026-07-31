@@ -54,6 +54,11 @@ describe('system setting MinIO connection test contract', () => {
     expect(minioMigration).toMatch(/JSON_SET\(@minio_form_content, '\$\.fields\[3\]\.type', 'password'\)/)
   })
 
+  it('documents the public-IP-only constraint for administrative connection tests', () => {
+    expect(minioMigration).toMatch(/MinIO Endpoint（公共 IP）/)
+    expect(minioMigration).toMatch(/仅支持公网 IP 地址/)
+  })
+
   it('has an idempotency guard for every MinIO category, config, menu, and role grant insert', () => {
     expect(minioMigration).toMatch(/INSERT INTO `eb_category`[\s\S]*?WHERE[\s\S]*?NOT EXISTS/)
     expect(minioMigration).toMatch(/INSERT INTO `eb_system_config`[\s\S]*?WHERE[\s\S]*?NOT EXISTS/)
