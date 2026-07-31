@@ -1,0 +1,91 @@
+name: jk-v31-confirmed-rules-ui-patch
+on:
+  push:
+    branches: [feat/jzk-v3.1-phase3-operations]
+    paths: ['.github/workflows/jk-v31-confirmed-rules-ui-patch.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/jzk-v3.1-phase3-operations
+          fetch-depth: 0
+      - name: Patch menu navigation and confirmed rule UI
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p=Path(path); s=p.read_text(encoding='utf-8')
+              if old not in s: raise SystemExit(f'anchor missing: {path}: {old[:120]!r}')
+              p.write_text(s.replace(old,new,1),encoding='utf-8')
+
+          # Never use an empty directory or a button as the first navigable page.
+          p=Path('src/utils/system.js'); s=p.read_text(encoding='utf-8')
+          start=s.index('export const findFirstNonNullChildren = (arr) => {')
+          end=s.index('export const findFirstNonNullChildrenKeys', start)
+          fixed='''export const findFirstNonNullChildren = (menus) => {\n  if (!Array.isArray(menus) || menus.length === 0) {\n    return null;\n  }\n\n  for (const menu of menus) {\n    if (!menu) continue;\n    const children = Array.isArray(menu.children) ? menu.children : [];\n    if (children.length > 0) {\n      const childPage = findFirstNonNullChildren(children);\n      if (childPage) return childPage;\n    }\n\n    const menuType = String(menu.menuType || menu.menu_type || '').toUpperCase();\n    const path = String(menu.path || '').trim();\n    if (path && menuType !== 'M' && menuType !== 'A') {\n      return menu;\n    }\n  }\n  return null;\n};\n\n'''
+          p.write_text(s[:start]+fixed+s[end:],encoding='utf-8')
+
+          replace_once(
+            'src/layout/component/columnsAside.vue',
+            '''    onColumnsAsideMenuClick(v) {\n      let { path, redirect } = v;\n      if (v.children.length) {\n        this.$router.push(findFirstNonNullChildren(v.children).path);\n      } else {\n        this.$router.push(path);\n      }\n      // 一个路由设置自动收起菜单\n      if (!v.children || v.children.length <= 1) this.$store.state.themeConfig.themeConfig.isCollapse = true;\n      else if (v.children.length > 1) this.$store.state.themeConfig.themeConfig.isCollapse = false;\n    },''',
+            '''    onColumnsAsideMenuClick(v) {\n      const children = Array.isArray(v.children) ? v.children : [];\n      const firstPage = children.length ? findFirstNonNullChildren(children) : null;\n      const targetPath = firstPage && firstPage.path ? firstPage.path : v.path;\n      if (targetPath) this.$router.push(targetPath);\n      // 有多个业务分组时展开二级菜单；空目录不再作为跳转目标。\n      this.$store.state.themeConfig.themeConfig.isCollapse = children.length <= 1;\n    },'''
+          )
+
+          # Commission rule business fields and client validation.
+          p=Path('src/views/jkBusiness/commissionRule/index.vue'); s=p.read_text(encoding='utf-8')
+          s=s.replace(':min="0" :precision="form.rewardMode === \'PERCENT\' ? 4 : 2"', ':min="form.rewardMode === \'PERCENT\' ? 0.0001 : 0.01" :precision="form.rewardMode === \'PERCENT\' ? 4 : 2"',1)
+          s=s.replace('<el-col :span="12"><el-form-item label="单笔封顶(元)"><el-input-number v-model="form.perOrderCap" :min="0" :precision="2" style="width:100%"/></el-form-item></el-col>', '<el-col :span="12"><el-form-item label="单笔封顶(元)"><el-input-number v-model="form.perOrderCap" :min="0.01" :precision="2" style="width:100%"/><div class="form-hint">留空表示不限制</div></el-form-item></el-col>',1)
+          s=s.replace('<el-col :span="12"><el-form-item label="周期封顶(元)"><el-input-number v-model="form.perUserPeriodCap" :min="0" :precision="2" style="width:100%"/></el-form-item></el-col>', '<el-col :span="12"><el-form-item label="周期封顶(元)"><el-input-number v-model="form.perUserPeriodCap" :min="0.01" :precision="2" style="width:100%"/><div class="form-hint">留空表示不限制</div></el-form-item></el-col>',1)
+          old='''        </el-row>\n        <el-form-item label="结算等待(天)"><el-input-number v-model="form.settleDelayDays" :min="0" :max="365"/></el-form-item>'''
+          new='''        </el-row>\n        <el-form-item label="规则总预算(元)"><el-input-number v-model="form.totalBudget" :min="0.01" :precision="2" style="width:100%"/><div class="form-hint">留空表示不限制；预算耗尽后不再生成新的平台应付奖励。</div></el-form-item>\n        <el-form-item label="结算等待(天)"><el-input-number v-model="form.settleDelayDays" :min="0" :max="365"/></el-form-item>'''
+          if old not in s: raise SystemExit('commission budget form anchor missing')
+          s=s.replace(old,new,1)
+          s=s.replace("perOrderCap:null,perUserPeriodCap:null,settleDelayDays:0", "perOrderCap:null,perUserPeriodCap:null,totalBudget:null,settleDelayDays:0",1)
+          old="    saveTemplate(){if(!this.form.planId||!this.form.templateCode||!this.form.ruleName||!this.form.receiverRoleCode||this.form.rewardValue===null)return this.$message.warning('请补齐商业方案、奖励模板、规则名称、受益身份和奖励数值');if(this.selectedTemplate&&this.selectedTemplate.supportsPeriod&&(!this.form.periodType||!this.form.performanceThreshold))return this.$message.warning('周期奖励必须填写统计周期和业绩门槛');this.saving=true;saveCommissionTemplateDraft(this.form).then(()=>{this.$message.success('奖励草稿已保存，当前仍为关闭状态');this.formVisible=false;this.load();this.loadPlans()}).finally(()=>{this.saving=false})},"
+          new="    saveTemplate(){if(!this.form.planId||!this.form.templateCode||!this.form.ruleName||!this.form.receiverRoleCode||this.form.rewardValue===null)return this.$message.warning('请补齐商业方案、奖励模板、规则名称、受益身份和奖励数值');if(Number(this.form.rewardValue)<=0)return this.$message.warning('奖励数值必须大于 0，未配置时不要填写 0');if([this.form.perOrderCap,this.form.perUserPeriodCap,this.form.totalBudget].some(v=>v!==null&&v!==undefined&&Number(v)<=0))return this.$message.warning('封顶和总预算填写后必须大于 0，留空表示不限制');if(this.selectedTemplate&&this.selectedTemplate.supportsPeriod&&(!this.form.periodType||!this.form.performanceThreshold))return this.$message.warning('周期奖励必须填写统计周期和业绩门槛');this.saving=true;saveCommissionTemplateDraft(this.form).then(()=>{this.$message.success('奖励草稿已保存，当前仍为关闭状态');this.formVisible=false;this.load();this.loadPlans()}).finally(()=>{this.saving=false})},"
+          if old not in s: raise SystemExit('commission save validation anchor missing')
+          s=s.replace(old,new,1)
+          old="    capText(row){const values=[];if(row.perOrderCap!=null)values.push(`单笔 ¥${Number(row.perOrderCap).toFixed(2)}`);if(row.perUserPeriodCap!=null)values.push(`周期 ¥${Number(row.perUserPeriodCap).toFixed(2)}`);return values.length?values.join(' / '):'未设置封顶'},"
+          new="    capText(row){const values=[];if(row.perOrderCap!=null&&Number(row.perOrderCap)>0)values.push(`单笔 ¥${Number(row.perOrderCap).toFixed(2)}`);if(row.perUserPeriodCap!=null&&Number(row.perUserPeriodCap)>0)values.push(`周期 ¥${Number(row.perUserPeriodCap).toFixed(2)}`);if(row.totalBudget!=null&&Number(row.totalBudget)>0)values.push(`总预算 ¥${Number(row.totalBudget).toFixed(2)}`);return values.length?values.join(' / '):'未设置限制'},"
+          if old not in s: raise SystemExit('commission cap display anchor missing')
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+
+          # Promotion page: net completed amount/order count and two conversion rates.
+          p=Path('src/views/jkBusiness/promotionEffect/index.vue'); s=p.read_text(encoding='utf-8')
+          s=s.replace('打开事件由小程序采集；有效成交事件只由后端零售完成与归属快照生成。场景快照缺失时按推广人统计，不伪造场景转化。', '打开事件由小程序采集；成交与退款反向事件只由后端真实订单链生成。部分退款只冲减金额，累计全额退款后不再计为有效成交。',1)
+          row_start=s.index('    <el-row :gutter="14" class="mt14">')
+          row_end=s.index('    </el-row>',row_start)+len('    </el-row>')
+          metrics='''    <el-row :gutter="14" class="mt14">\n      <el-col :span="3"><el-card shadow="never"><div class="metric-label">推广打开</div><div class="metric-value">{{ summary.openCount || 0 }}</div></el-card></el-col>\n      <el-col :span="3"><el-card shadow="never"><div class="metric-label">已识别访客</div><div class="metric-value">{{ summary.identifiedVisitorCount || 0 }}</div></el-card></el-col>\n      <el-col :span="3"><el-card shadow="never"><div class="metric-label">净有效订单</div><div class="metric-value">{{ summary.completedOrderCount || 0 }}</div></el-card></el-col>\n      <el-col :span="4"><el-card shadow="never"><div class="metric-label">净有效成交金额</div><div class="metric-value">¥{{ money(summary.completedAmount) }}</div></el-card></el-col>\n      <el-col :span="3"><el-card shadow="never"><div class="metric-label">打开转化率</div><div class="metric-value">{{ rate(summary.openConversionRate) }}</div></el-card></el-col>\n      <el-col :span="3"><el-card shadow="never"><div class="metric-label">访客转化率</div><div class="metric-value">{{ rate(summary.visitorConversionRate) }}</div></el-card></el-col>\n      <el-col :span="3"><el-card shadow="never"><div class="metric-label">推广场景数</div><div class="metric-value">{{ summary.sceneCount || 0 }}</div></el-card></el-col>\n    </el-row>'''
+          s=s[:row_start]+metrics+s[row_end:]
+          s=s.replace('客户端不能写 RETAIL_COMPLETED', '客户端不能写 RETAIL_COMPLETED / RETAIL_REFUND',1)
+          s=s.replace("<el-tag :type=\"row.eventType === 'RETAIL_COMPLETED' ? 'success' : 'info'\">", "<el-tag :type=\"row.eventType === 'RETAIL_COMPLETED' ? 'success' : (row.eventType === 'RETAIL_REFUND' ? 'danger' : 'info')\">",1)
+          s=s.replace('<el-table-column label="成交金额" width="120"><template slot-scope="{row}">{{ row.eventType === \'RETAIL_COMPLETED\' ? \'¥\' + money(row.amount) : \'--\' }}</template></el-table-column>', '<el-table-column label="净额影响" width="125"><template slot-scope="{row}"><span v-if="row.eventType === \'RETAIL_COMPLETED\'">+¥{{ money(row.amount) }}</span><span v-else-if="row.eventType === \'RETAIL_REFUND\'" class="danger">-¥{{ money(row.amount) }}</span><span v-else>--</span></template></el-table-column>',1)
+          s=s.replace('<el-table-column label="写入来源" width="145"><template slot-scope="{row}">{{ row.eventType === \'RETAIL_COMPLETED\' ? \'后端业务完成事件\' : \'小程序入口采集\' }}</template></el-table-column>', '<el-table-column label="写入来源" width="155"><template slot-scope="{row}">{{ row.eventType === \'OPEN\' ? \'小程序入口采集\' : (row.eventType === \'RETAIL_REFUND\' ? \'后端退款完成事件\' : \'后端业务完成事件\') }}</template></el-table-column>',1)
+          s=s.replace("    eventText(v){return{OPEN:'推广打开',RETAIL_COMPLETED:'有效零售完成'}[v]||v},\n    money(v){return Number(v||0).toFixed(2)}", "    eventText(v){return{OPEN:'推广打开',RETAIL_COMPLETED:'有效零售完成',RETAIL_REFUND:'退款冲减'}[v]||v},\n    rate(v){return v===null||v===undefined?'--':`${v}%`},\n    money(v){return Number(v||0).toFixed(2)}",1)
+          p.write_text(s,encoding='utf-8')
+
+          # UI guard markers.
+          p=Path('.github/workflows/jk-v31-gapfix-ui-guards.yml'); s=p.read_text(encoding='utf-8')
+          marker="          grep -q '未配置 / 未发布' src/views/jkBusiness/commissionRule/index.vue\n"
+          if "RETAIL_REFUND" not in s:
+              if marker not in s: raise SystemExit('ui guard marker missing')
+              s=s.replace(marker, marker+"          grep -q 'totalBudget' src/views/jkBusiness/commissionRule/index.vue\n          grep -q 'RETAIL_REFUND' src/views/jkBusiness/promotionEffect/index.vue\n          grep -q 'findFirstNonNullChildren' src/layout/component/columnsAside.vue\n",1)
+              p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit patch and remove workflow
+        shell: bash
+        run: |
+          rm -f .github/workflows/jk-v31-confirmed-rules-ui-patch.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m 'feat(jzk-v3.1): 修复菜单首跳并展示退款净效果'
+          git push origin HEAD:feat/jzk-v3.1-phase3-operations
