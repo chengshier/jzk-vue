@@ -128,6 +128,17 @@ export function getUploadTypeApi() {
 }
 
 /**
+ * @description 测试 MinIO 连接（仅使用当前表单值，不保存配置）
+ */
+export function testMinioConfigApi(data) {
+  return request({
+    url: '/admin/system/config/minio/test',
+    method: 'POST',
+    data,
+  });
+}
+
+/**
  * @description 获取小程序下载地址
  */
 export function getMiniDownloadUrlApi() {

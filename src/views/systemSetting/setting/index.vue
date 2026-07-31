@@ -24,11 +24,20 @@
               >
                 <parser
                   v-if="formConfChild.render"
+                  :ref="'uploadConfigForm-' + tabItem.extra"
                   :is-edit="formConfChild.isEdit"
                   :form-conf="formConfChild.content"
                   :form-edit-data="currentEditData"
                   @submit="handlerSubmit"
                 />
+                <el-button
+                  v-if="isMinioUploadConfig && tabItem.extra === activeNamel2"
+                  type="primary"
+                  plain
+                  @click="testMinioConfig"
+                >
+                  测试 MinIO 连接
+                </el-button>
               </el-tab-pane>
             </el-tabs>
             <span v-else>
@@ -79,6 +88,21 @@ export default {
   mounted() {
     this.handlerGetTreeList();
     this.getCurrentUploadSelectedFlag();
+  },
+  computed: {
+    isMinioUploadConfig() {
+      const fields = this.formConfChild.content.fields || [];
+      const minioKeys = [
+        'minioEndpoint',
+        'minioBucket',
+        'minioAccessKey',
+        'minioSecretKey',
+        'minioRegion',
+        'minioPrefix',
+        'minioUploadUrl',
+      ];
+      return minioKeys.every((key) => fields.some((field) => field.__vModel__ === key));
+    },
   },
   methods: {
     checkPermi,
@@ -208,6 +232,20 @@ export default {
       systemConfigApi.getUploadTypeApi().then((data) => {
         this.currentSelectedUploadFlag = parseInt(data);
       });
+    },
+    getMinioFormData() {
+      const form = this.$refs['uploadConfigForm-' + this.activeNamel2];
+      return form && form.formData ? { ...form.formData } : { ...this.currentEditData };
+    },
+    testMinioConfig() {
+      systemConfigApi
+        .testMinioConfigApi(this.getMinioFormData())
+        .then(() => {
+          this.$message.success('MinIO 连接测试成功');
+        })
+        .catch(() => {
+          this.$message.error('MinIO 连接测试失败');
+        });
     },
   },
 };
