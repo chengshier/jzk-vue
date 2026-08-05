@@ -55,8 +55,8 @@ describe('system setting MinIO connection test contract', () => {
   })
 
   it('documents the public-IP-only constraint for administrative connection tests', () => {
-    expect(minioMigration).toMatch(/MinIO Endpoint（公共 IP）/)
-    expect(minioMigration).toMatch(/仅支持公网 IP 地址/)
+    expect(minioMigration).toMatch(/MinIO Endpoint（公共 IPv4）/)
+    expect(minioMigration).toMatch(/仅支持公网 IPv4 地址/)
   })
 
   it('has an idempotency guard for every MinIO category, config, menu, and role grant insert', () => {
