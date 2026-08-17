@@ -71,6 +71,7 @@ const jkBusinessRouter = {
     { path: 'healthAccessLog', component: () => import('@/views/jkBusiness/healthAccessLog/index'), name: 'jkHealthAccessLog', meta: { title: '健康访问日志', section: 'health' } },
     { path: 'healthSync', component: () => import('@/views/jkBusiness/healthSync/index'), name: 'jkHealthSync', meta: { title: '健康同步日志', section: 'health' } },
     { path: 'healthIntegration', component: () => import('@/views/jkBusiness/healthIntegration/index'), name: 'jkHealthIntegration', meta: { title: '健康接入状态', section: 'health' } },
+    { path: 'sinocareCallback', component: () => import('@/views/jkBusiness/sinocareCallback/index'), name: 'jkSinocareCallback', meta: { title: '三诺回调日志', section: 'health' } },
     { path: 'healthReport', component: () => import('@/views/jkBusiness/healthReport/index'), name: 'jkHealthReport', meta: { title: '健康周报月报', section: 'health' } },
 
     // 系统配置与运维

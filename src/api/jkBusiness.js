@@ -197,6 +197,8 @@ export function exportJkHealthData(params) { return request({ url: '/admin/jk/he
 export function getJkHealthSyncList(params) { return request({ url: '/admin/jk/health/sync/list', method: 'get', params }) }
 export function retryJkHealthSync(id) { return request({ url: '/admin/jk/health/sync/' + id + '/retry', method: 'post' }) }
 export function getJkHealthIntegrationStatus() { return request({ url: '/admin/jk/health/integration/status', method: 'get' }) }
+export function getJkSinocareCallbackList(params) { return request({ url: '/admin/jk/health/sinocare/callback/list', method: 'get', params }) }
+export function retryJkSinocareCallback(id) { return request({ url: '/admin/jk/health/sinocare/callback/' + id + '/retry', method: 'post' }) }
 
 export function getJkHealthDeviceList(params) { return request({ url: '/admin/jk/health/device/list', method: 'get', params }) }
 export function saveJkHealthDevice(data) { return request({ url: '/admin/jk/health/device/save', method: 'post', data }) }
