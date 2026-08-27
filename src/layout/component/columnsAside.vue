@@ -89,6 +89,7 @@ export default {
       }
       this.$store.state.themeConfig.themeConfig.isCollapse = children.length <= 1;
     },
+    // 设置高亮动态位置
     onColumnsAsideDown(k) {
       this.$nextTick(() => {
         this.setColumnsAsideMove(k);

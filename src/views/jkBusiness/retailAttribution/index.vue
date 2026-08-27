@@ -72,7 +72,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="区县代理">
-          <el-select v-model="actionForm.countyAgentUserId" filterable remote clearable reserve-keyword :remote-method="searchCountyAgents" :loading="optionLoading" placeholder="按姓名或手机号搜索，可不选" style="width:100%">
+          <el-select v-model="actionForm.countyAgentUserId" :disabled="!actionForm.finalRegionCode" filterable remote clearable reserve-keyword :remote-method="searchCountyAgents" :loading="optionLoading" placeholder="请先选择最终区域，再按姓名或手机号搜索" style="width:100%">
             <el-option v-for="item in countyAgentOptions" :key="item.value" :label="item.label" :value="Number(item.value)" />
           </el-select>
           <div class="form-hint">运营选择带姓名和手机号的业务选项，不手填数据库用户 ID。</div>
@@ -86,7 +86,8 @@
 </template>
 
 <script>
-import { getRetailAttributionList, getRetailAttributionDetail, resolveRetailAttribution, adjustRetailAttribution, getJkRegionOptions, getJkUserOptions } from '@/api/jkGapfix'
+import { getRetailAttributionList, getRetailAttributionDetail, resolveRetailAttribution, adjustRetailAttribution, getRetailAttributionRegionOptions, getRetailAttributionCountyAgentOptions } from '@/api/jkGapfix'
+import { optionList } from '@/utils/jkOptions'
 
 const JsonView = { functional: true, props: { value: { type: [Object, Array, String], default: () => ({}) } }, render(h, ctx) { return h('pre', { class: 'json-view' }, [JSON.stringify(ctx.props.value || {}, null, 2)]) } }
 
@@ -120,8 +121,8 @@ export default {
     openDetail(row) { this.detail = null; this.drawerVisible = true; this.activeTab = 'result'; this.detailLoading = true; getRetailAttributionDetail(row.id).then(res => { this.detail = res.data || res }).finally(() => { this.detailLoading = false }) },
     canResolve(row) { return row.lockStatus !== 'LOCKED' && ['PENDING_MANUAL', 'CONFLICT'].includes(row.attributionStatus) },
     openAction(row, adjust) { this.actionRow = row; this.actionMode = adjust ? 'adjust' : 'resolve'; this.actionForm = { finalRegionCode: row.finalRegionCode || '', countyAgentUserId: row.countyAgentUserId || null, keepDirectRelation: !!row.directParentUserId, reason: '' }; this.regionOptions = row.finalRegionCode ? [{ value: row.finalRegionCode, label: row.finalRegionNameSnapshot || row.finalRegionCode }] : []; this.countyAgentOptions = []; this.actionVisible = true },
-    searchRegions(keyword) { if (!keyword || keyword.trim().length < 1) return; this.optionLoading = true; getJkRegionOptions({ keyword: keyword.trim(), enabled: true, targetLevel: 3 }).then(res => { this.regionOptions = res.data || [] }).finally(() => { this.optionLoading = false }) },
-    searchCountyAgents(keyword) { this.optionLoading = true; getJkUserOptions({ keyword: keyword || '', roleCode: 'county_agent', limit: 30 }).then(res => { this.countyAgentOptions = res.data || [] }).finally(() => { this.optionLoading = false }) },
+    searchRegions(keyword) { if (!keyword || keyword.trim().length < 1) return; this.optionLoading = true; getRetailAttributionRegionOptions({ keyword: keyword.trim() }).then(res => { this.regionOptions = optionList(res) }).finally(() => { this.optionLoading = false }) },
+    searchCountyAgents(keyword) { if (!this.actionForm.finalRegionCode) return; this.optionLoading = true; getRetailAttributionCountyAgentOptions({ regionCode: this.actionForm.finalRegionCode, keyword: keyword || '' }).then(res => { this.countyAgentOptions = optionList(res) }).finally(() => { this.optionLoading = false }) },
     regionChanged() { this.actionForm.countyAgentUserId = null; this.searchCountyAgents('') },
     submitAction() {
       if (!this.actionForm.finalRegionCode) return this.$message.warning('请选择最终区域')

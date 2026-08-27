@@ -239,6 +239,7 @@ export default {
     },
   },
   created() {
+    this.query.receiverRoleCode = this.$route.query.roleCode || '';
     this.loadTemplates();
     this.loadPlans();
     this.load();
@@ -249,7 +250,7 @@ export default {
       getCommissionTemplates({}).then((r) => {
         this.templates = this.unwrap(r);
         const code = this.$route.query.templateCode;
-        if (code) {
+        if (code && !this.$route.query.ruleId) {
           const target = this.templates.find((x) => x.templateCode === code);
           if (target) this.openTemplate(target);
         }
@@ -263,6 +264,8 @@ export default {
       getJkCommissionRuleList({ receiverRoleCode: this.query.receiverRoleCode, status: null })
         .then((r) => {
           let rows = this.unwrap(r);
+          const ruleId = this.$route.query.ruleId;
+          if (ruleId) rows = rows.filter((x) => String(x.id) === String(ruleId));
           if (this.query.publishStatus) rows = rows.filter((x) => x.publishStatus === this.query.publishStatus);
           this.list = rows;
         })

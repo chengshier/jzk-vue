@@ -1,4 +1,51 @@
-<template><div class="app-container"><div class="filter-container"><el-select v-model="query.roleCode" clearable placeholder="收益身份" class="filter-item"><el-option v-for="item in roleOptions" :key="item.roleCode" :label="item.roleName" :value="item.roleCode" /></el-select><el-select v-model="query.userId" filterable remote clearable placeholder="选择用户" :remote-method="searchUsers" :loading="userLoading" class="filter-item user-filter"><el-option v-for="user in userOptions" :key="user.id" :label="user.label" :value="user.id" /></el-select><el-button type="primary" @click="load">查询</el-button></div><el-table v-loading="loading" :data="list" border><el-table-column prop="accountNo" label="账户号" min-width="165" /><el-table-column label="用户" min-width="180"><template slot-scope="{row}"><div>{{ row.applicantName || '用户不存在' }}</div><div class="sub-text">{{ row.userNickname || '--' }} / {{ row.applicantPhone || '--' }}</div></template></el-table-column><el-table-column label="身份" width="140"><template slot-scope="{row}"><div>{{ row.roleName || '身份未配置' }}</div><div class="sub-text">{{ row.regionName || '区域未配置' }}</div></template></el-table-column><el-table-column prop="pendingSettleAmount" label="待结算" width="110" /><el-table-column prop="settledAmount" label="已结算" width="110" /><el-table-column prop="frozenCommissionAmount" label="冻结佣金" width="110" /><el-table-column prop="reversedAmount" label="已冲正" width="100" /><el-table-column prop="negativeOffsetAmount" label="待抵扣" width="100" /><el-table-column prop="totalCommissionAmount" label="累计佣金" width="110" /><el-table-column label="状态" width="90"><template slot-scope="{row}"><el-tag size="mini" :type="row.statusTag || 'info'">{{ row.statusText || (row.status?'启用':'停用') }}</el-tag></template></el-table-column></el-table></div></template>
-<script>import { getJkBusinessRoleList, getJkCommissionAccountList } from '@/api/jkBusiness'
-import { userListApi } from '@/api/user'; export default { data() { return { query: { roleCode: '', userId: '' }, list: [], loading: false, roleOptions: [], userOptions: [], userLoading: false } }, created() { this.loadRoles(); this.load() }, methods: { loadRoles() { getJkBusinessRoleList({ page: 1, limit: 100, enabled: true }).then(res => { this.roleOptions = res.data || res || [] }) }, searchUsers(keyword) { if (!keyword || !keyword.trim()) { this.userOptions = []; return } this.userLoading = true; userListApi({ keywords: keyword, page: 1, limit: 20 }).then(response => { const users = response.list || response.data || []; this.userOptions = users.map(user => ({ id: user.uid || user.id, label: (user.nickname || user.realName || '用户') + '（' + (user.uid || user.id) + '）' })) }).finally(() => { this.userLoading = false }) }, load() { this.loading = true; getJkCommissionAccountList(this.query).then(response => { this.list = response.data || response || [] }).finally(() => { this.loading = false }) } }}; </script>
-<style scoped>.filter-item{width:150px;margin-right:8px}.user-filter{width:130px}.sub-text{font-size:12px;color:#909399}</style>
+<template>
+  <div class="app-container">
+    <div class="filter-container">
+      <el-select v-model="query.roleCode" clearable placeholder="收益身份" class="filter-item"><el-option v-for="item in roleOptions" :key="item.roleCode" :label="item.roleName" :value="item.roleCode" /></el-select>
+      <el-select v-model="query.userId" filterable remote clearable placeholder="选择用户" :remote-method="searchUsers" :loading="userLoading" class="filter-item user-filter"><el-option v-for="user in userOptions" :key="user.id" :label="user.label" :value="user.id" /></el-select>
+      <el-button type="primary" @click="load">查询</el-button>
+    </div>
+    <el-table v-loading="loading" :data="list" border>
+      <el-table-column prop="accountNo" label="账户号" min-width="165" />
+      <el-table-column label="用户" min-width="180"><template slot-scope="{row}"><div>{{ row.applicantName || '用户不存在' }}</div><div class="sub-text">{{ row.userNickname || '--' }} / {{ row.applicantPhone || '--' }}</div></template></el-table-column>
+      <el-table-column label="身份" width="140"><template slot-scope="{row}"><div>{{ row.roleName || '身份未配置' }}</div><div class="sub-text">{{ row.regionName || '区域未配置' }}</div></template></el-table-column>
+      <el-table-column prop="pendingSettleAmount" label="待结算" width="110" /><el-table-column prop="settledAmount" label="已结算" width="110" /><el-table-column prop="frozenCommissionAmount" label="冻结佣金" width="110" /><el-table-column prop="reversedAmount" label="已冲正" width="100" /><el-table-column prop="negativeOffsetAmount" label="待抵扣" width="100" /><el-table-column prop="totalCommissionAmount" label="累计佣金" width="110" />
+      <el-table-column label="状态" width="90"><template slot-scope="{row}"><el-tag size="mini" :type="row.statusTag || 'info'">{{ row.statusText || (row.status ? '启用' : '停用') }}</el-tag></template></el-table-column>
+      <el-table-column label="操作" width="105" fixed="right"><template slot-scope="{row}"><el-button type="text" @click="openDetail(row)">账户明细</el-button></template></el-table-column>
+    </el-table>
+
+    <el-drawer title="佣金账户明细" :visible.sync="detailVisible" size="900px" append-to-body>
+      <div v-if="detail" v-loading="detailLoading" class="drawer-body">
+        <el-descriptions :column="3" border size="small">
+          <el-descriptions-item label="账户号">{{ detail.account.accountNo }}</el-descriptions-item><el-descriptions-item label="待结算">¥{{ detail.account.pendingSettleAmount || 0 }}</el-descriptions-item><el-descriptions-item label="已结算">¥{{ detail.account.settledAmount || 0 }}</el-descriptions-item>
+          <el-descriptions-item label="冻结佣金">¥{{ detail.account.frozenCommissionAmount || 0 }}</el-descriptions-item><el-descriptions-item label="已冲正">¥{{ detail.account.reversedAmount || 0 }}</el-descriptions-item><el-descriptions-item label="待抵扣">¥{{ detail.account.negativeOffsetAmount || 0 }}</el-descriptions-item>
+          <el-descriptions-item label="资金账户">{{ detail.fundAccount ? detail.fundAccount.accountNo : '尚未结算，未创建' }}</el-descriptions-item><el-descriptions-item label="可提现">¥{{ detail.fundAccount ? detail.fundAccount.availableAmount : 0 }}</el-descriptions-item><el-descriptions-item label="提现中">¥{{ detail.fundAccount ? detail.fundAccount.withdrawingAmount : 0 }}</el-descriptions-item>
+        </el-descriptions>
+        <el-tabs class="mt16">
+          <el-tab-pane :label="'佣金记录 (' + detail.commissionRecords.length + ')' "><el-table :data="detail.commissionRecords" size="mini" border><el-table-column prop="commissionNo" label="佣金单号" min-width="160" /><el-table-column prop="sourceNo" label="来源单据" min-width="160" /><el-table-column prop="rewardType" label="奖励类型" width="130" /><el-table-column prop="commissionAmount" label="金额" width="100" /><el-table-column prop="status" label="状态" width="120" /><el-table-column prop="freezeEndTime" label="冻结结束" min-width="160" /></el-table></el-tab-pane>
+          <el-tab-pane :label="'佣金流水 (' + detail.commissionFlows.length + ')' "><el-table :data="detail.commissionFlows" size="mini" border><el-table-column prop="flowNo" label="流水号" min-width="160" /><el-table-column prop="flowType" label="类型" width="130" /><el-table-column prop="changeAmount" label="变动金额" width="100" /><el-table-column prop="beforeAmount" label="变动前" width="100" /><el-table-column prop="afterAmount" label="变动后" width="100" /><el-table-column prop="createTime" label="时间" min-width="160" /></el-table></el-tab-pane>
+          <el-tab-pane :label="'冲正记录 (' + detail.reverses.length + ')' "><el-table :data="detail.reverses" size="mini" border><el-table-column prop="reverseNo" label="冲正单号" min-width="160" /><el-table-column prop="originalCommissionRecordId" label="原佣金记录ID" width="140" /><el-table-column prop="reverseType" label="冲正类型" width="130" /><el-table-column prop="reverseAmount" label="冲正金额" width="100" /><el-table-column prop="status" label="状态" width="120" /><el-table-column prop="createTime" label="时间" min-width="160" /></el-table></el-tab-pane>
+          <el-tab-pane :label="'资金流水 (' + detail.fundFlows.length + ')' "><el-table :data="detail.fundFlows" size="mini" border><el-table-column prop="flowNo" label="流水号" min-width="160" /><el-table-column prop="flowType" label="类型" width="130" /><el-table-column prop="changeAmount" label="变动金额" width="100" /><el-table-column prop="beforeAmount" label="变动前" width="100" /><el-table-column prop="afterAmount" label="变动后" width="100" /><el-table-column prop="createTime" label="时间" min-width="160" /></el-table></el-tab-pane>
+        </el-tabs>
+      </div>
+    </el-drawer>
+  </div>
+</template>
+
+<script>
+import { getJkBusinessRoleList, getJkCommissionAccountList, getJkCommissionAccountDetail } from '@/api/jkBusiness'
+import { userListApi } from '@/api/user'
+
+export default {
+  data() { return { query: { roleCode: '', userId: '' }, list: [], loading: false, roleOptions: [], userOptions: [], userLoading: false, detailVisible: false, detailLoading: false, detail: null } },
+  created() { this.loadRoles(); this.load() },
+  methods: {
+    loadRoles() { getJkBusinessRoleList({ page: 1, limit: 100, enabled: true }).then(res => { this.roleOptions = res.data || res || [] }) },
+    searchUsers(keyword) { if (!keyword || !keyword.trim()) { this.userOptions = []; return } this.userLoading = true; userListApi({ keywords: keyword, page: 1, limit: 20 }).then(response => { const users = response.list || response.data || []; this.userOptions = users.map(user => ({ id: user.uid || user.id, label: (user.nickname || user.realName || '用户') + '（' + (user.uid || user.id) + '）' })) }).finally(() => { this.userLoading = false }) },
+    load() { this.loading = true; getJkCommissionAccountList(this.query).then(response => { this.list = response.data || response || [] }).finally(() => { this.loading = false }) },
+    openDetail(row) { this.detailVisible = true; this.detailLoading = true; this.detail = null; getJkCommissionAccountDetail(row.id).then(response => { const data = response.data || response || {}; this.detail = { account: data.account || {}, commissionRecords: data.commissionRecords || [], commissionFlows: data.commissionFlows || [], reverses: data.reverses || [], fundAccount: data.fundAccount || null, fundFlows: data.fundFlows || [] } }).finally(() => { this.detailLoading = false }) }
+  }
+}
+</script>
+
+<style scoped>.filter-item{width:150px;margin-right:8px}.user-filter{width:130px}.sub-text{font-size:12px;color:#909399}.drawer-body{padding:20px}.mt16{margin-top:16px}</style>

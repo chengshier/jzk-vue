@@ -5,6 +5,8 @@ export const getRetailAttributionDetail = id => request({ url: `/admin/jk/retail
 export const getRetailAttributionOverview = id => request({ url: `/admin/jk/retail-attribution/${id}/overview`, method: 'get' })
 export const resolveRetailAttribution = (id, data) => request({ url: `/admin/jk/retail-attribution/${id}/resolve`, method: 'post', data })
 export const adjustRetailAttribution = (id, data) => request({ url: `/admin/jk/retail-attribution/${id}/adjust`, method: 'post', data })
+export const getRetailAttributionRegionOptions = params => request({ url: '/admin/jk/retail-attribution/options/regions', method: 'get', params })
+export const getRetailAttributionCountyAgentOptions = params => request({ url: '/admin/jk/retail-attribution/options/county-agents', method: 'get', params })
 
 export const getJkUserProfileRegion = userId => request({ url: `/admin/jk/user/${userId}/region`, method: 'get' })
 export const saveJkUserProfileRegion = (userId, data) => request({ url: `/admin/jk/user/${userId}/region`, method: 'post', data })
