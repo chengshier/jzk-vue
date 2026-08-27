@@ -2,7 +2,7 @@ name: JZK V3.1 admin UI guards
 
 on:
   push:
-    branches: [feat/jzk-v3.1-phase3-operations]
+    branches: [master, fix/jzk-v3.1-post-merge-hardening]
   pull_request:
     branches: [master]
   workflow_dispatch:
@@ -35,6 +35,9 @@ jobs:
           grep -q 'totalBudget' "$rule"
           grep -q '留空表示不限制' "$rule"
           grep -q '按真实业务单据试算' "$rule"
+          grep -q 'trialConfirmed: true' "$rule"
+          grep -q '我已核对该真实业务单据' "$rule"
+          grep -q '请先使用真实业务单据完成试算' "$rule"
           grep -q 'RETAIL_REFUND' src/views/jkBusiness/promotionEffect/index.vue
           grep -q 'visitorConversionRate' src/views/jkBusiness/promotionEffect/index.vue
           grep -q 'findFirstNonNullChildren' src/layout/component/columnsAside.vue
