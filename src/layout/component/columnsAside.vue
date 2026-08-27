@@ -6,11 +6,11 @@
         <li
           v-for="(v, k) in columnsAsideList"
           :key="k"
-          @click="onColumnsAsideMenuClick(v)"
           ref="columnsAsideOffsetTopRefs"
           class="layout-columns"
           :class="{ 'layout-columns-active': v.k === liIndex }"
           :title="v.title"
+          @click="onColumnsAsideMenuClick(v)"
         >
           <div :class="setColumnsAsidelayout">
             <i :class="'el-icon-' + v.icon"></i>
@@ -46,11 +46,9 @@ export default {
     };
   },
   computed: {
-    // 设置分栏高亮风格
     setColumnsAsideStyle() {
       return this.$store.state.themeConfig.themeConfig.columnsAsideStyle;
     },
-    // 设置分栏布局风格
     setColumnsAsidelayout() {
       return this.$store.state.themeConfig.themeConfig.columnsAsideLayout;
     },
@@ -58,7 +56,7 @@ export default {
       return this.$store.state.themeConfig.themeConfig.Layout;
     },
     routesList() {
-      this.$store.state.user.menuList;
+      return this.$store.state.user.menuList;
     },
     ...mapState('menu', ['activePath']),
   },
@@ -70,41 +68,32 @@ export default {
       this.setFilterRoutes();
     });
     this.setFilterRoutes();
-    // this.$store
-    //   .dispatch('user/getMenus', {
-    //     that: this,
-    //   })
-    //   .then((res) => {
-    //     this.setFilterRoutes();
-    //   });
   },
   methods: {
-    // 设置菜单高亮位置移动
     setColumnsAsideMove(k) {
       if (k === undefined) return false;
       const els = this.$refs.columnsAsideOffsetTopRefs;
       this.liIndex = k;
       this.$refs.columnsAsideActiveRef.style.top = `${els[k].offsetTop + this.difference}px`;
     },
-    // 菜单高亮点击事件
+    /**
+     * 一级菜单只进入真实页面。空目录、按钮权限或异常菜单数据均回退到一级路由自身，
+     * 由该路由的 redirect 选择默认页面，不能再直接进入 /404。
+     */
     onColumnsAsideMenuClick(v) {
-      let { path, redirect } = v;
-      if (v.children.length) {
-        this.$router.push(findFirstNonNullChildren(v.children).path);
-      } else {
-        this.$router.push(path);
+      const children = Array.isArray(v.children) ? v.children : [];
+      const firstPage = children.length ? findFirstNonNullChildren(children) : null;
+      const targetPath = firstPage && firstPage.path ? firstPage.path : v.path;
+      if (targetPath) {
+        this.$router.push(targetPath);
       }
-      // 一个路由设置自动收起菜单
-      if (!v.children || v.children.length <= 1) this.$store.state.themeConfig.themeConfig.isCollapse = true;
-      else if (v.children.length > 1) this.$store.state.themeConfig.themeConfig.isCollapse = false;
+      this.$store.state.themeConfig.themeConfig.isCollapse = children.length <= 1;
     },
-    // 设置高亮动态位置
     onColumnsAsideDown(k) {
       this.$nextTick(() => {
         this.setColumnsAsideMove(k);
       });
     },
-    // 设置/过滤路由（非静态路由/是否显示在菜单中）
     setFilterRoutes() {
       if (this.$store.state.user.menuList.length <= 0) return false;
       this.columnsAsideList = this.filterRoutesFun(this.$store.state.user.menuList);
@@ -112,79 +101,65 @@ export default {
       if (!resData.children) {
         this.bus.$emit('setSendColumnsChildren', []);
         this.$store.commit('user/childMenuList', []);
-
         this.$store.state.themeConfig.themeConfig.isCollapse = true;
         return false;
       }
       this.bus.$emit('oneCatName', resData.item[0].title);
       this.onColumnsAsideDown(resData.item[0].k);
-      // 刷新时，初始化一个路由设置自动收起菜单
-      resData.children.length > 0
-        ? (this.$store.state.themeConfig.themeConfig.isCollapse = false)
-        : (this.$store.state.themeConfig.themeConfig.isCollapse = true);
+      this.$store.state.themeConfig.themeConfig.isCollapse = resData.children.length === 0;
       this.bus.$emit('setSendColumnsChildren', resData.children || []);
       this.$store.commit('user/childMenuList', resData.children || []);
     },
-    // 传送当前子级数据到菜单中
     setSendChildren(path) {
-      let currentData = {};
-      this.columnsAsideList.map((v, k) => {
-        v['k'] = k;
+      const currentData = {};
+      this.columnsAsideList.forEach((v, k) => {
+        v.k = k;
         if (v.path === path) {
-          currentData['item'] = [{ ...v }];
-          if (v.children) currentData['children'] = v.children;
+          currentData.item = [{ ...v }];
+          if (v.children) currentData.children = v.children;
         }
       });
       return currentData;
     },
-    // 路由过滤递归函数
     filterRoutesFun(arr) {
       return arr
         .filter((item) => item.path)
         .map((item) => {
-          item = Object.assign({}, item);
-          if (item.children.length) item.children = this.filterRoutesFun(item.children);
-          return item;
+          const copy = Object.assign({}, item);
+          const children = Array.isArray(copy.children) ? copy.children : [];
+          copy.children = children.length ? this.filterRoutesFun(children) : [];
+          return copy;
         });
     },
-    // tagsView 点击时，根据路由查找下标 columnsAsideList，实现左侧菜单高亮
     setColumnsMenuHighlight(path) {
       const currentSplitRoute = this.columnsAsideList.find((v) => v.path === path);
-      if (!currentSplitRoute) {
-        // this.onColumnsAsideDown(0);
-        return false;
-      }
-      // 延迟拿值，防止取不到
+      if (!currentSplitRoute) return false;
       setTimeout(() => {
         this.onColumnsAsideDown(currentSplitRoute.k);
       }, 0);
     },
   },
   watch: {
-    // 监听 vuex 数据变化
     '$store.state': {
       handler(val) {
-        val.themeConfig.themeConfig.columnsAsideStyle === 'columnsRound'
-          ? (this.difference = 3)
-          : (this.difference = 0);
-        if (val.user.menuList.length === this.columnsAsideList.length) return false;
+        this.difference = val.themeConfig.themeConfig.columnsAsideStyle === 'columnsRound' ? 3 : 0;
       },
       deep: true,
     },
-    // 监听路由的变化
     $route: {
       handler(to) {
         this.setColumnsMenuHighlight(to.path);
-        let HeadName = getHeaderName(to, this.columnsAsideList);
-        let asideList = getMenuSider(this.columnsAsideList, HeadName)[0].children;
-        const resData = this.setSendChildren(HeadName);
+        const headName = getHeaderName(to, this.columnsAsideList);
+        const sider = getMenuSider(this.columnsAsideList, headName);
+        const asideList = sider.length && sider[0].children ? sider[0].children : [];
+        const resData = this.setSendChildren(headName);
         if (resData.item) {
           this.onColumnsAsideDown(resData.item[0].k);
           this.bus.$emit('oneCatName', resData.item[0].title);
         } else {
           this.onColumnsAsideDown(0);
         }
-        this.$store.commit('user/childMenuList', asideList || []);
+        this.$store.commit('user/childMenuList', asideList);
       },
       deep: true,
     },
@@ -239,10 +214,6 @@ export default {
         color: var(--prev-bg-columnsMenuBarColor);
       }
     }
-    // li:hover {
-    //   background: var(--prev-color-primary);
-    //   color: var(--prev-bg-columnsMenuBarColor);
-    // }
     .layout-columns {
       transition: 0.3s ease-in-out;
     }
@@ -251,10 +222,8 @@ export default {
       color: var(--prev-bg-columnsMenuActiveColor);
       transition: 0.3s ease-in-out;
     }
-
     .columns-round {
       background: var(--prev-color-primary);
-      // color: var(--prev-color-text-white);
       position: absolute;
       left: 50%;
       top: 2px;
