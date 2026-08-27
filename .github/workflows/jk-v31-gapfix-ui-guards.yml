@@ -22,6 +22,7 @@ jobs:
           set -euo pipefail
           rule=src/views/jkBusiness/commissionRule/index.vue
           attribution=src/views/jkBusiness/retailAttribution/index.vue
+          router=src/router/modules/jkBusiness.js
           if grep -n -E 'v-model="[^\"]*(buyerUserId|sellerUserId|directParentUserId|countyAgentUserId|baseAmount)"' "$rule"; then
             echo 'Ordinary rule trial must not expose snapshot user/base numeric inputs' >&2; exit 1
           fi
@@ -30,6 +31,12 @@ jobs:
           fi
           if grep -n -E 'placeholder="[^\"]*(用户ID|代理ID|数据库ID)' "$attribution"; then
             echo 'Operators must not enter database user IDs' >&2; exit 1
+          fi
+          if grep -n 'commissionV31' "$router" || test -f src/views/jkBusiness/commissionV31/index.vue; then
+            echo 'Duplicate commission V3.1 operator page must not be routable or present' >&2; exit 1
+          fi
+          if grep -n -E 'getCommissionV31Templates|trialCommissionV31|publishCommissionV31|disableCommissionV31' src/api/jkV31.js; then
+            echo 'Duplicate commission V3.1 API surface must not return' >&2; exit 1
           fi
           grep -q '未配置 / 未发布' "$rule"
           grep -q 'totalBudget' "$rule"
