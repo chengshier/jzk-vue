@@ -32,6 +32,7 @@ const jkBusinessRouter = {
     { path: 'receiveException', component: () => import('@/views/jkBusiness/receiveException/index'), name: 'jkReceiveException', meta: { title: '异常收货处理', section: 'trade' } },
     { path: 'receiveExceptionResolution', component: () => import('@/views/jkBusiness/receiveExceptionResolution/index'), name: 'jkReceiveExceptionResolution', meta: { title: '异常收货V2方案', section: 'trade' } },
     { path: 'offlineSale', component: () => import('@/views/jkBusiness/offlineSale/index'), name: 'jkOfflineSale', meta: { title: '线下销售', section: 'trade' } },
+    { path: 'businessLedger', component: () => import('@/views/jkBusiness/businessLedger/index'), name: 'jkBusinessLedger', meta: { title: '业绩与线下销售', section: 'trade' } },
 
     // 库存
     { path: 'stockAccount', component: () => import('@/views/jkBusiness/stockAccount/index'), name: 'jkStockAccount', meta: { title: '库存主体', section: 'stock' } },
@@ -46,6 +47,7 @@ const jkBusinessRouter = {
     { path: 'performanceRecord', component: () => import('@/views/jkBusiness/performanceRecord/index'), name: 'jkPerformanceRecord', meta: { title: '业绩明细', section: 'finance' } },
     { path: 'operationProfit', component: () => import('@/views/jkBusiness/operationProfit/index'), name: 'jkOperationProfit', meta: { title: '经营收益', section: 'finance' } },
     { path: 'commissionRule', component: () => import('@/views/jkBusiness/commissionRule/index'), name: 'jkCommissionRule', meta: { title: '收益奖励规则', section: 'finance' } },
+    { path: 'commissionV31', component: () => import('@/views/jkBusiness/commissionV31/index'), name: 'jkCommissionV31', meta: { title: '角色佣金规则 V3.1', section: 'finance' } },
     { path: 'commissionRecord', component: () => import('@/views/jkBusiness/commissionRecord/index'), name: 'jkCommissionRecord', meta: { title: '佣金明细', section: 'finance' } },
     { path: 'commissionAccount', component: () => import('@/views/jkBusiness/commissionAccount/index'), name: 'jkCommissionAccount', meta: { title: '佣金账户', section: 'finance' } },
     { path: 'commissionFlow', component: () => import('@/views/jkBusiness/commissionFlow/index'), name: 'jkCommissionFlow', meta: { title: '佣金流水', section: 'finance' } },
