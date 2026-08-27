@@ -1,7 +1,11 @@
 import Layout from '@/layout';
 
 const jkBusinessRouter = {
-  path: '/operation/jzk', component: Layout, redirect: '/operation/jzk/platformOrder', name: 'JkBusiness', meta: { title: '九州康管理', icon: 'clipboard' },
+  path: '/operation/jzk',
+  component: Layout,
+  redirect: '/operation/jzk/platformOrder',
+  name: 'JkBusiness',
+  meta: { title: '九州康管理', icon: 'clipboard' },
   children: [
     // 身份与团队
     { path: 'identityApply', component: () => import('@/views/jkBusiness/identityApplyAudit/index'), name: 'jkIdentityApplyAudit', meta: { title: '身份申请审核', section: 'identity' } },
@@ -16,12 +20,17 @@ const jkBusinessRouter = {
     // 商品、价格和推广内容
     { path: 'priceRule', component: () => import('@/views/jkBusiness/priceRule/index'), name: 'jkPriceRule', meta: { title: '商品价格规则', section: 'product' } },
     { path: 'promotionMaterial', component: () => import('@/views/jkBusiness/promotionMaterial/index'), name: 'jkPromotionMaterial', meta: { title: '推广素材管理', section: 'product' } },
+    { path: 'promotionCode', component: () => import('@/views/jkBusiness/promotionCode/index'), name: 'jkPromotionCode', meta: { title: '真实微信推广码', section: 'product' } },
+    { path: 'promotionEffect', component: () => import('@/views/jkBusiness/promotionEffect/index'), name: 'jkPromotionEffect', meta: { title: '推广效果统计', section: 'product' } },
 
-    // 订货、调拨与线下销售
+
+    // 订货、调拨、零售归属与线下销售
     { path: 'platformOrder', component: () => import('@/views/jkBusiness/platformOrder/index'), name: 'jkPlatformOrder', meta: { title: '平台订货管理', section: 'trade' } },
     { path: 'stockTransfer', component: () => import('@/views/jkBusiness/stockTransfer/index'), name: 'jkStockTransfer', meta: { title: '库存调拨管理', section: 'trade' } },
     { path: 'stockTransferReturn', component: () => import('@/views/jkBusiness/stockTransferReturn/index'), name: 'jkStockTransferReturn', meta: { title: '调拨退回管理', section: 'trade' } },
+    { path: 'retailAttribution', component: () => import('@/views/jkBusiness/retailAttribution/index'), name: 'jkRetailAttribution', meta: { title: '零售订单归属', section: 'trade' } },
     { path: 'receiveException', component: () => import('@/views/jkBusiness/receiveException/index'), name: 'jkReceiveException', meta: { title: '异常收货处理', section: 'trade' } },
+    { path: 'receiveExceptionResolution', component: () => import('@/views/jkBusiness/receiveExceptionResolution/index'), name: 'jkReceiveExceptionResolution', meta: { title: '异常收货V2方案', section: 'trade' } },
     { path: 'offlineSale', component: () => import('@/views/jkBusiness/offlineSale/index'), name: 'jkOfflineSale', meta: { title: '线下销售', section: 'trade' } },
     { path: 'businessLedger', component: () => import('@/views/jkBusiness/businessLedger/index'), name: 'jkBusinessLedger', meta: { title: '业绩与线下销售', section: 'trade' } },
 
@@ -32,7 +41,9 @@ const jkBusinessRouter = {
     { path: 'stockBatch', component: () => import('@/views/jkBusiness/stockBatch/index'), name: 'jkStockBatch', meta: { title: '批次与库龄', section: 'stock' } },
     { path: 'stockCheck', component: () => import('@/views/jkBusiness/stockCheck/index'), name: 'jkStockCheck', meta: { title: '库存盘点', section: 'stock' } },
 
-    // 业绩、收益与资金
+    // 商业规则、业绩、收益与资金
+    { path: 'businessPlan', component: () => import('@/views/jkBusiness/businessPlan/index'), name: 'jkBusinessPlan', meta: { title: '商业方案', section: 'finance' } },
+    { path: 'performancePeriod', component: () => import('@/views/jkBusiness/performancePeriod/index'), name: 'jkPerformancePeriod', meta: { title: '周期业绩与阶梯奖励', section: 'finance' } },
     { path: 'performanceRecord', component: () => import('@/views/jkBusiness/performanceRecord/index'), name: 'jkPerformanceRecord', meta: { title: '业绩明细', section: 'finance' } },
     { path: 'operationProfit', component: () => import('@/views/jkBusiness/operationProfit/index'), name: 'jkOperationProfit', meta: { title: '经营收益', section: 'finance' } },
     { path: 'commissionRule', component: () => import('@/views/jkBusiness/commissionRule/index'), name: 'jkCommissionRule', meta: { title: '收益奖励规则', section: 'finance' } },
@@ -46,7 +57,7 @@ const jkBusinessRouter = {
     { path: 'fundFlow', component: () => import('@/views/jkBusiness/fundFlow/index'), name: 'jkFundFlow', meta: { title: '资金流水', section: 'finance' } },
     { path: 'withdrawAudit', component: () => import('@/views/jkBusiness/withdrawAudit/index'), name: 'jkWithdrawAudit', meta: { title: '提现审核', section: 'finance' } },
 
-    // 经营、风险与健康
+    // 经营、风险与健康业务
     { path: 'reportOverview', component: () => import('@/views/jkBusiness/reportOverview/index'), name: 'jkReportOverview', meta: { title: '业务总览报表', section: 'report' } },
     { path: 'reportAnalysis', component: () => import('@/views/jkBusiness/reportAnalysis/index'), name: 'jkReportAnalysis', meta: { title: '经营分析报表', section: 'report' } },
     { path: 'reportExport', component: () => import('@/views/jkBusiness/reportExport/index'), name: 'jkReportExport', meta: { title: '报表导出中心', section: 'report' } },
@@ -62,6 +73,8 @@ const jkBusinessRouter = {
     { path: 'healthAccessLog', component: () => import('@/views/jkBusiness/healthAccessLog/index'), name: 'jkHealthAccessLog', meta: { title: '健康访问日志', section: 'health' } },
     { path: 'healthSync', component: () => import('@/views/jkBusiness/healthSync/index'), name: 'jkHealthSync', meta: { title: '健康同步日志', section: 'health' } },
     { path: 'healthIntegration', component: () => import('@/views/jkBusiness/healthIntegration/index'), name: 'jkHealthIntegration', meta: { title: '健康接入状态', section: 'health' } },
+    { path: 'sinocareCallback', component: () => import('@/views/jkBusiness/sinocareCallback/index'), name: 'jkSinocareCallback', meta: { title: '三诺回调日志', section: 'health' } },
+    { path: 'healthReport', component: () => import('@/views/jkBusiness/healthReport/index'), name: 'jkHealthReport', meta: { title: '健康周报月报', section: 'health' } },
 
     // 系统配置与运维
     { path: 'businessRole', component: () => import('@/views/jkBusiness/businessRole/index'), name: 'jkBusinessRole', meta: { title: '系统·业务角色', section: 'system' } },
@@ -69,7 +82,9 @@ const jkBusinessRouter = {
     { path: 'adminMapping', component: () => import('@/views/jkBusiness/adminMapping/index'), name: 'jkAdminMapping', meta: { title: '系统·账号映射', section: 'system' } },
     { path: 'dict', component: () => import('@/views/jkBusiness/dict/index'), name: 'jkDict', meta: { title: '系统·业务字典', section: 'system' } },
     { path: 'businessEvent', component: () => import('@/views/jkBusiness/businessEvent/index'), name: 'jkBusinessEvent', meta: { title: '运维·事件补偿', section: 'system' } },
-    { path: 'accountReconcile', component: () => import('@/views/jkBusiness/accountReconcile/index'), name: 'jkAccountReconcile', meta: { title: '运维·账户对账', section: 'system' } }
-  ]
+    { path: 'accountReconcile', component: () => import('@/views/jkBusiness/accountReconcile/index'), name: 'jkAccountReconcile', meta: { title: '运维·账户对账', section: 'system' } },
+    { path: 'subscriptionTask', component: () => import('@/views/jkBusiness/subscriptionTask/index'), name: 'jkSubscriptionTask', meta: { title: '微信消息任务', section: 'system' } },
+  ],
 };
+
 export default jkBusinessRouter;

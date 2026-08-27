@@ -271,6 +271,9 @@
                   v-if="scope.row.spreadUid && scope.row.spreadUid > 0 && checkPermi(['admin:retail:spread:clean'])"
                   >清除上级推广人</el-dropdown-item
                 >
+                <!-- 九州康入口授权只改变入口可见性，不创建业务身份或推广上下级。 -->
+                <el-dropdown-item @click.native="toggleJkEntryAccess(scope.row, true)">开通九州康入口</el-dropdown-item>
+                <el-dropdown-item @click.native="toggleJkEntryAccess(scope.row, false)">关闭九州康入口</el-dropdown-item>
               </el-dropdown-menu>
             </el-dropdown>
           </template>
@@ -458,6 +461,7 @@ import {
   updatePhoneApi,
 } from '@/api/user';
 import { spreadClearApi } from '@/api/distribution';
+import { setJkEntryAccess } from '@/api/jkBusiness';
 import editFrom from './edit';
 import userDetails from './userDetails';
 import levelEdit from './level';
@@ -629,6 +633,17 @@ export default {
           this.getList();
         });
       });
+    },
+    toggleJkEntryAccess(row, enabled) {
+      const action = enabled ? '开通' : '关闭';
+      this.$confirm(`确认${action}用户“${row.nickname || row.uid}”的九州康入口？`, `${action}九州康入口`, {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        type: enabled ? 'success' : 'warning',
+      }).then(() => setJkEntryAccess(row.uid, enabled)).then(() => {
+        this.$message.success(`九州康入口已${action}`);
+        this.getList();
+      }).catch(() => {});
     },
     onSubExtension(formName) {
       this.$refs[formName].validate((valid) => {

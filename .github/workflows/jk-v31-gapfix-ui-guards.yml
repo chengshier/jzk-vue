@@ -1,0 +1,84 @@
+name: JZK V3.1 admin UI guards
+
+on:
+  push:
+    branches: [feat/jzk-v3.1-phase3-operations]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  business-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '16'
+      - name: Reject raw-ID and technical-enum operation forms
+        shell: bash
+        run: |
+          set -euo pipefail
+          rule=src/views/jkBusiness/commissionRule/index.vue
+          attribution=src/views/jkBusiness/retailAttribution/index.vue
+          if grep -n -E 'v-model="[^\"]*(buyerUserId|sellerUserId|directParentUserId|countyAgentUserId|baseAmount)"' "$rule"; then
+            echo 'Ordinary rule trial must not expose snapshot user/base numeric inputs' >&2; exit 1
+          fi
+          if grep -n -E '<el-form-item[^>]*label="(业务来源|奖励类型|受益人来源|计算基数|计算方式|叠加组|叠加策略|触发时机)"' "$rule"; then
+            echo 'Ordinary operators must use business templates, not technical enums' >&2; exit 1
+          fi
+          if grep -n -E 'placeholder="[^\"]*(用户ID|代理ID|数据库ID)' "$attribution"; then
+            echo 'Operators must not enter database user IDs' >&2; exit 1
+          fi
+          grep -q '未配置 / 未发布' "$rule"
+          grep -q 'totalBudget' "$rule"
+          grep -q '留空表示不限制' "$rule"
+          grep -q '按真实业务单据试算' "$rule"
+          grep -q 'RETAIL_REFUND' src/views/jkBusiness/promotionEffect/index.vue
+          grep -q 'visitorConversionRate' src/views/jkBusiness/promotionEffect/index.vue
+          grep -q 'findFirstNonNullChildren' src/layout/component/columnsAside.vue
+          grep -q "menuType !== 'M'" src/utils/system.js
+          test -f src/views/jkBusiness/businessPlan/index.vue
+          test -f src/views/jkBusiness/performancePeriod/index.vue
+          test -f src/components/jk/JkBusinessDrawer.vue
+      - name: Validate Vue script syntax
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import pathlib
+          import re
+          import subprocess
+          import tempfile
+
+          targets = [
+            'src/views/jkBusiness/businessPlan/index.vue',
+            'src/views/jkBusiness/commissionRule/index.vue',
+            'src/views/jkBusiness/retailAttribution/index.vue',
+            'src/views/jkBusiness/performancePeriod/index.vue',
+            'src/views/jkBusiness/promotionEffect/index.vue',
+            'src/components/jk/JkBusinessDrawer.vue',
+            'src/layout/component/columnsAside.vue',
+          ]
+          failures = []
+          static_import = re.compile(
+              r'^\s*import\s+(?:[\s\S]*?\s+from\s+)?[\'\"][^\'\"]+[\'\"]\s*;?\s*',
+              flags=re.M,
+          )
+          for index, name in enumerate(targets):
+              text = pathlib.Path(name).read_text(encoding='utf-8')
+              match = re.search(r'<script[^>]*>(.*?)</script>', text, re.S)
+              if not match:
+                  failures.append(name + ': missing script')
+                  continue
+              script = static_import.sub('', match.group(1))
+              script = re.sub(r'export\s+default', 'const __component =', script, count=1)
+              temp = pathlib.Path(tempfile.gettempdir()) / ('jk-v31-ui-%s.mjs' % index)
+              temp.write_text(script, encoding='utf-8')
+              result = subprocess.run(['node', '--check', str(temp)], capture_output=True, text=True)
+              if result.returncode:
+                  failures.append(name + '\n' + result.stderr)
+          if failures:
+              raise SystemExit('\n\n'.join(failures))
+          print('checked', len(targets), 'Vue scripts')
+          PY

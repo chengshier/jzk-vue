@@ -24,6 +24,11 @@ export function getJkUserBusinessRoleList(params) {
   return request({ url: '/admin/jk/identity/user-role/list', method: 'get', params })
 }
 
+// 入口展示权限独立于业务身份：普通用户也可由业务人员按用户 ID 开通。
+export function setJkEntryAccess(userId, enabled) {
+  return request({ url: `/admin/jk/entry-access/${userId}`, method: 'post', params: { enabled } })
+}
+
 export function freezeJkIdentity(data) {
   return request({ url: '/admin/jk/identity/freeze', method: 'post', data })
 }
@@ -116,8 +121,10 @@ export function getJkCommissionRuleList(params) { return request({ url: '/admin/
 export function saveJkCommissionRule(data) { return request({ url: '/admin/jk/commission/rule/save', method: 'post', data }) }
 export function getJkCommissionRecordList(params) { return request({ url: '/admin/jk/commission/record/list', method: 'get', params }) }
 export function getJkCommissionAccountList(params) { return request({ url: '/admin/jk/commission/account/list', method: 'get', params }) }
+export function getJkCommissionAccountDetail(id) { return request({ url: '/admin/jk/commission/account/' + id + '/detail', method: 'get' }) }
 export function getJkCommissionReverseList(params) { return request({ url: '/admin/jk/commission/reverse/list', method: 'get', params }) }
 export function getJkFundAccountList(params) { return request({ url: '/admin/jk/fund/account/list', method: 'get', params }) }
+export function getJkFundAccountDetail(id) { return request({ url: '/admin/jk/fund/account/' + id + '/detail', method: 'get' }) }
 export function getJkFundFlowList(params) { return request({ url: '/admin/jk/fund/flow/list', method: 'get', params }) }
 export function getJkWithdrawList(params) { return request({ url: '/admin/jk/withdraw/list', method: 'get', params }) }
 export function auditJkWithdraw(data) { return request({ url: '/admin/jk/withdraw/audit', method: 'post', data }) }
@@ -197,6 +204,8 @@ export function exportJkHealthData(params) { return request({ url: '/admin/jk/he
 export function getJkHealthSyncList(params) { return request({ url: '/admin/jk/health/sync/list', method: 'get', params }) }
 export function retryJkHealthSync(id) { return request({ url: '/admin/jk/health/sync/' + id + '/retry', method: 'post' }) }
 export function getJkHealthIntegrationStatus() { return request({ url: '/admin/jk/health/integration/status', method: 'get' }) }
+export function getJkSinocareCallbackList(params) { return request({ url: '/admin/jk/health/sinocare/callback/list', method: 'get', params }) }
+export function retryJkSinocareCallback(id) { return request({ url: '/admin/jk/health/sinocare/callback/' + id + '/retry', method: 'post' }) }
 
 export function getJkHealthDeviceList(params) { return request({ url: '/admin/jk/health/device/list', method: 'get', params }) }
 export function saveJkHealthDevice(data) { return request({ url: '/admin/jk/health/device/save', method: 'post', data }) }

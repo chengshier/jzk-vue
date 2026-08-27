@@ -1,0 +1,18 @@
+<template>
+  <div class="divBox">
+    <el-alert title="报告只汇总用户真实血糖、饮食、运动和用药记录，不生成诊断、处方或虚构设备数据。" type="info" :closable="false" />
+    <el-card shadow="never" class="mt14">
+      <el-form :inline="true" size="mini"><el-form-item label="用户ID"><el-input-number v-model="query.userId" :min="1" controls-position="right" /></el-form-item><el-form-item label="类型"><el-select v-model="query.reportType" clearable><el-option label="周报" value="WEEKLY"/><el-option label="月报" value="MONTHLY"/></el-select></el-form-item><el-form-item><el-button type="primary" @click="load">查询</el-button></el-form-item></el-form>
+      <el-table v-loading="loading" :data="data.list" size="mini">
+        <el-table-column prop="reportNo" label="报告编号" min-width="170"/><el-table-column prop="userId" label="用户ID" width="100"/><el-table-column label="周期" min-width="190"><template slot-scope="{row}">{{date(row.periodStart)}} 至 {{date(row.periodEnd)}}</template></el-table-column><el-table-column label="类型" width="80"><template slot-scope="{row}">{{row.reportType==='WEEKLY'?'周报':'月报'}}</template></el-table-column><el-table-column prop="recordCount" label="记录数" width="80"/><el-table-column label="平均血糖" width="100"><template slot-scope="{row}">{{row.averageGlucose==null?'--':row.averageGlucose}}</template></el-table-column><el-table-column label="高/低风险" width="110"><template slot-scope="{row}">{{row.highCount||0}} / {{row.lowCount||0}}</template></el-table-column><el-table-column prop="generatedAt" label="生成时间" min-width="160"/><el-table-column label="操作" width="80"><template slot-scope="{row}"><el-button type="text" @click="view(row)">详情</el-button></template></el-table-column>
+      </el-table>
+      <el-pagination background layout="total,prev,pager,next" :total="Number(data.total||0)" :current-page="query.page" :page-size="query.limit" @current-change="p=>{query.page=p;load()}"/>
+    </el-card>
+    <el-drawer title="健康报告详情" :visible.sync="visible" size="55%"><div v-if="detail" class="drawer-body"><el-descriptions :column="2" border><el-descriptions-item label="用户ID">{{detail.userId}}</el-descriptions-item><el-descriptions-item label="报告周期">{{date(detail.periodStart)}} 至 {{date(detail.periodEnd)}}</el-descriptions-item><el-descriptions-item label="血糖记录">{{detail.glucoseCount||0}}</el-descriptions-item><el-descriptions-item label="平均/最低/最高">{{detail.averageGlucose||'--'}} / {{detail.minimumGlucose||'--'}} / {{detail.maximumGlucose||'--'}}</el-descriptions-item><el-descriptions-item label="饮食/运动/用药">{{detail.dietCount||0}} / {{detail.exerciseCount||0}} / {{detail.medicineCount||0}}</el-descriptions-item><el-descriptions-item label="来源汇总">{{detail.sourceSummaryJson||'{}'}}</el-descriptions-item></el-descriptions><el-card shadow="never" class="mt14"><div slot="header">系统汇总</div><div class="summary">{{detail.summaryText||'该周期暂无可汇总记录。'}}</div><div class="notice">本报告仅用于健康记录整理，不构成医疗诊断。</div></el-card></div></el-drawer>
+  </div>
+</template>
+<script>
+import { getHealthReportList, getHealthReportDetail } from '@/api/jkPhase3'
+export default{data(){return{loading:false,data:{list:[],total:0},query:{page:1,limit:20,userId:null,reportType:''},visible:false,detail:null}},created(){this.load()},methods:{load(){this.loading=true;getHealthReportList(this.query).then(r=>{const d=r.data||r||{};this.data={list:d.list||d.records||[],total:d.total||0}}).finally(()=>this.loading=false)},view(row){getHealthReportDetail(row.id).then(r=>{this.detail=r.data||r;this.visible=true})},date(v){return v?String(v).slice(0,10):'--'}}}
+</script>
+<style scoped>.mt14{margin-top:14px}.drawer-body{padding:0 24px 30px}.summary{line-height:1.8;white-space:pre-wrap}.notice{margin-top:16px;color:#909399}.el-pagination{margin-top:18px;text-align:right}</style>
