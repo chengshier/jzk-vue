@@ -47,7 +47,6 @@ const jkBusinessRouter = {
     { path: 'performanceRecord', component: () => import('@/views/jkBusiness/performanceRecord/index'), name: 'jkPerformanceRecord', meta: { title: '业绩明细', section: 'finance' } },
     { path: 'operationProfit', component: () => import('@/views/jkBusiness/operationProfit/index'), name: 'jkOperationProfit', meta: { title: '经营收益', section: 'finance' } },
     { path: 'commissionRule', component: () => import('@/views/jkBusiness/commissionRule/index'), name: 'jkCommissionRule', meta: { title: '收益奖励规则', section: 'finance' } },
-    { path: 'commissionV31', component: () => import('@/views/jkBusiness/commissionV31/index'), name: 'jkCommissionV31', meta: { title: '角色佣金规则 V3.1', section: 'finance' } },
     { path: 'commissionRecord', component: () => import('@/views/jkBusiness/commissionRecord/index'), name: 'jkCommissionRecord', meta: { title: '佣金明细', section: 'finance' } },
     { path: 'commissionAccount', component: () => import('@/views/jkBusiness/commissionAccount/index'), name: 'jkCommissionAccount', meta: { title: '佣金账户', section: 'finance' } },
     { path: 'commissionFlow', component: () => import('@/views/jkBusiness/commissionFlow/index'), name: 'jkCommissionFlow', meta: { title: '佣金流水', section: 'finance' } },

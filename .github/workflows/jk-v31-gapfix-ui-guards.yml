@@ -2,7 +2,7 @@ name: JZK V3.1 admin UI guards
 
 on:
   push:
-    branches: [feat/jzk-v3.1-phase3-operations]
+    branches: [master, fix/jzk-v3.1-post-merge-hardening]
   pull_request:
     branches: [master]
   workflow_dispatch:
@@ -22,6 +22,7 @@ jobs:
           set -euo pipefail
           rule=src/views/jkBusiness/commissionRule/index.vue
           attribution=src/views/jkBusiness/retailAttribution/index.vue
+          router=src/router/modules/jkBusiness.js
           if grep -n -E 'v-model="[^\"]*(buyerUserId|sellerUserId|directParentUserId|countyAgentUserId|baseAmount)"' "$rule"; then
             echo 'Ordinary rule trial must not expose snapshot user/base numeric inputs' >&2; exit 1
           fi
@@ -31,10 +32,19 @@ jobs:
           if grep -n -E 'placeholder="[^\"]*(用户ID|代理ID|数据库ID)' "$attribution"; then
             echo 'Operators must not enter database user IDs' >&2; exit 1
           fi
+          if grep -n 'commissionV31' "$router" || test -f src/views/jkBusiness/commissionV31/index.vue; then
+            echo 'Duplicate commission V3.1 operator page must not be routable or present' >&2; exit 1
+          fi
+          if grep -n -E 'getCommissionV31Templates|trialCommissionV31|publishCommissionV31|disableCommissionV31' src/api/jkV31.js; then
+            echo 'Duplicate commission V3.1 API surface must not return' >&2; exit 1
+          fi
           grep -q '未配置 / 未发布' "$rule"
           grep -q 'totalBudget' "$rule"
           grep -q '留空表示不限制' "$rule"
           grep -q '按真实业务单据试算' "$rule"
+          grep -q 'trialConfirmed: true' "$rule"
+          grep -q '我已核对该真实业务单据' "$rule"
+          grep -q '请先使用真实业务单据完成试算' "$rule"
           grep -q 'RETAIL_REFUND' src/views/jkBusiness/promotionEffect/index.vue
           grep -q 'visitorConversionRate' src/views/jkBusiness/promotionEffect/index.vue
           grep -q 'findFirstNonNullChildren' src/layout/component/columnsAside.vue

@@ -139,16 +139,19 @@
         <el-table-column label="为什么命中/未命中" min-width="260"><template slot-scope="{row}"><div v-if="row.reasonCode">{{ reasonText(row.reasonCode) }}</div><div v-for="(text,index) in row.explanations || []" :key="index" class="hint">{{ text }}</div></template></el-table-column>
       </el-table>
       <el-empty v-else-if="trialExecuted" description="没有匹配结果；当前可能没有已发布规则，或业务快照不满足规则条件"/>
+      <el-alert v-if="trialExecuted && !trialHasPayableMatch" class="mt14" title="当前试算没有可支付的命中结果，不能确认发布。请检查业务单据、适用范围和奖励参数。" type="warning" :closable="false" show-icon/>
+      <el-checkbox v-if="trialHasPayableMatch" v-model="trialConfirmed" class="trial-confirm">我已核对该真实业务单据的受益人、计算基数和预计奖励，确认试算结果符合预期</el-checkbox>
       <span slot="footer"><el-button @click="trialVisible=false">关闭</el-button><el-button type="primary" :loading="trialLoading" @click="runSourceTrial">加载快照并试算</el-button></span>
     </el-dialog>
 
     <el-dialog title="发布奖励规则" :visible.sync="publishVisible" width="570px">
       <el-alert title="发布后规则不可直接编辑；仅从生效时间开始匹配新业务，历史订单不会重算。" type="warning" :closable="false" show-icon/>
+      <el-alert class="mt14" title="本次发布已绑定当前规则最近一次人工确认的真实业务试算；如果规则或试算条件发生变化，请重新试算确认。" type="success" :closable="false" show-icon/>
       <el-form label-width="110px" class="mt14">
         <el-form-item label="规则">{{ publishRule ? publishRule.ruleName : '' }}</el-form-item>
         <el-form-item label="生效时间" required><el-date-picker v-model="publishForm.effectiveStartTime" type="datetime" value-format="yyyy-MM-dd HH:mm:ss"/></el-form-item>
         <el-form-item label="失效时间"><el-date-picker v-model="publishForm.effectiveEndTime" type="datetime" value-format="yyyy-MM-dd HH:mm:ss" placeholder="留空表示长期"/></el-form-item>
-        <el-form-item label="发布说明"><el-input v-model.trim="publishForm.remark" type="textarea" :rows="3"/></el-form-item>
+        <el-form-item label="发布说明" required><el-input v-model.trim="publishForm.remark" type="textarea" :rows="3"/></el-form-item>
       </el-form>
       <span slot="footer"><el-button @click="publishVisible=false">取消</el-button><el-button type="primary" :loading="saving" @click="publish">确认发布</el-button></span>
     </el-dialog>
@@ -215,6 +218,7 @@ export default {
       trialPayload: null,
       trialResults: [],
       trialExecuted: false,
+      trialConfirmed: false,
       publishVisible: false,
       publishRule: null,
       publishForm: { effectiveStartTime: '', effectiveEndTime: '', remark: '' },
@@ -236,6 +240,9 @@ export default {
         STOCK_TRANSFER: '输入库存调拨单号',
         PERFORMANCE_PERIOD: '输入业绩编号',
       }[this.trialForm.sourceType] || '输入真实业务单号';
+    },
+    trialHasPayableMatch() {
+      return this.trialResults.some((row) => row.matchStatus === 'MATCHED' && Number(row.cappedAmount || 0) > 0);
     },
   },
   created() {
@@ -315,12 +322,14 @@ export default {
       this.trialPayload = null;
       this.trialResults = [];
       this.trialExecuted = false;
+      this.trialConfirmed = false;
       this.trialVisible = true;
     },
     runSourceTrial() {
       if (!this.trialForm.sourceNo) return this.$message.warning('请输入真实业务单号');
       this.trialLoading = true;
       this.trialExecuted = false;
+      this.trialConfirmed = false;
       trialCommissionBySource({ ruleId: this.trialRule.id, sourceType: this.trialForm.sourceType, sourceNo: this.trialForm.sourceNo })
         .then((r) => {
           this.trialPayload = (r && r.data) || r || {};
@@ -329,14 +338,26 @@ export default {
         })
         .finally(() => { this.trialLoading = false; });
     },
-    openPublish(row) { this.publishRule = row; this.publishForm = { effectiveStartTime: '', effectiveEndTime: '', remark: '' }; this.publishVisible = true; },
+    openPublish(row) {
+      if (!this.trialConfirmed || !this.trialRule || String(this.trialRule.id) !== String(row.id)) {
+        this.$message.warning('请先使用真实业务单据完成试算，并人工核对确认结果后再发布');
+        return;
+      }
+      this.publishRule = row;
+      this.publishForm = { effectiveStartTime: '', effectiveEndTime: '', remark: '' };
+      this.publishVisible = true;
+    },
     publish() {
       if (!this.publishForm.effectiveStartTime) return this.$message.warning('请选择生效时间');
+      if (!this.publishForm.remark) return this.$message.warning('请填写发布说明');
+      if (!this.trialConfirmed || !this.trialRule || String(this.trialRule.id) !== String(this.publishRule.id)) return this.$message.warning('当前规则没有已人工确认的真实业务试算，请重新试算');
       this.saving = true;
-      publishJkCommissionRule({ ruleId: this.publishRule.id, ...this.publishForm })
+      publishJkCommissionRule({ ruleId: this.publishRule.id, trialConfirmed: true, ...this.publishForm })
         .then(() => {
           this.$message.success('规则已发布，仅影响生效后的新业务');
           this.publishVisible = false;
+          this.trialConfirmed = false;
+          this.trialRule = null;
           this.load();
         })
         .finally(() => { this.saving = false; });
@@ -376,5 +397,5 @@ export default {
 </script>
 
 <style scoped>
-.mt14{margin-top:14px}.header-row{display:flex;align-items:center;justify-content:space-between}.sub-title{margin-left:12px;color:#909399;font-size:12px}.template-card{min-height:190px;margin-bottom:14px}.template-card.selected{border-color:#409eff}.template-card__title{font-size:16px;font-weight:600}.template-card__desc{min-height:58px;margin:10px 0;color:#606266;font-size:13px;line-height:1.6}.template-card__status{margin-bottom:12px;color:#e6a23c;font-size:12px}.rule-name{font-weight:600}.hint,.form-hint{margin-top:4px;color:#909399;font-size:12px;line-height:1.5}.danger{color:#f56c6c}.trial-source{margin-top:14px}.trial-source__title{margin-bottom:10px;font-weight:600}.drawer-body{padding:0 22px 30px}
+.mt14{margin-top:14px}.header-row{display:flex;align-items:center;justify-content:space-between}.sub-title{margin-left:12px;color:#909399;font-size:12px}.template-card{min-height:190px;margin-bottom:14px}.template-card.selected{border-color:#409eff}.template-card__title{font-size:16px;font-weight:600}.template-card__desc{min-height:58px;margin:10px 0;color:#606266;font-size:13px;line-height:1.6}.template-card__status{margin-bottom:12px;color:#e6a23c;font-size:12px}.rule-name{font-weight:600}.hint,.form-hint{margin-top:4px;color:#909399;font-size:12px;line-height:1.5}.danger{color:#f56c6c}.trial-source{margin-top:14px}.trial-source__title{margin-bottom:10px;font-weight:600}.trial-confirm{display:block;margin-top:14px}.drawer-body{padding:0 22px 30px}
 </style>

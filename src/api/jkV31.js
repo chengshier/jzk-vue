@@ -7,11 +7,7 @@ export function updateRelationLimitRuleStatus(id, status) { return request({ url
 export function getRelationQuotaUsage(params) { return request({ url: '/admin/jk/relation-quota/usage', method: 'get', params }) }
 export function forceAdjustAgentRelation(data) { return request({ url: '/admin/jk/relation-quota/force-adjust', method: 'post', data }) }
 
-// V3.1 第二批：佣金规则、业绩、经营收益与线下销售
-export function getCommissionV31Templates(params) { return request({ url: '/admin/jk/commission-rule/v31/template/list', method: 'get', params }) }
-export function trialCommissionV31(data) { return request({ url: '/admin/jk/commission-rule/v31/trial', method: 'post', data }) }
-export function publishCommissionV31(data) { return request({ url: '/admin/jk/commission-rule/v31/publish', method: 'post', data }) }
-export function disableCommissionV31(params) { return request({ url: '/admin/jk/commission-rule/v31/disable', method: 'post', params }) }
+// V3.1 第二批：业绩、经营收益与线下销售
 export function getPerformanceRecords(params) { return request({ url: '/admin/jk/performance/list', method: 'get', params }) }
 export function getOperationProfitRecords(params) { return request({ url: '/admin/jk/operation-profit/list', method: 'get', params }) }
 export function getOfflineSaleList(params) { return request({ url: '/admin/jk/offline-sale/list', method: 'get', params }) }
